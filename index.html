@@ -186,6 +186,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   const addDays = (k, n) => { const d = parse(k); d.setDate(d.getDate() + n); return dk(d); };
   const weekday = k => parse(k).getDay();
   const today = () => dk(new Date());
+  const weekStart = k => addDays(k, -((weekday(k) + 6) % 7));
   const daysBetween = (a, b) => { let n = 0, k = a; if (a <= b) { while (k < b) { k = addDays(k, 1); n++; } return n; } while (k > b) { k = addDays(k, -1); n--; } return n; };
   const fmtDay = k => parse(k).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
   const DAY_LETTERS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -193,7 +194,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- State ----------
-  const VERSION = "v1.2-web";
+  const VERSION = "v1.3-web";
   const ISSUES = "https://github.com/belipede/ascend-web/issues";
   const EMPTY = () => ({ v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], opens: {}, trialStart: null, savedAt: 0 });
   let FB = { col: null, list: [], open: false, kind: "bug", text: "", sent: "", err: "" };
@@ -208,6 +209,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     const keyOk = k => /^\d{4}-\d{2}-\d{2}$/.test(k);
     for (const h of o.habits) if (!h.id || !h.name) throw new Error("A habit is missing its id or name.");
     for (const h of o.habits) if (h.perWeek != null && !(Number.isInteger(Number(h.perWeek)) && h.perWeek >= 0 && h.perWeek <= 7)) throw new Error(`"${h.name}" has a bad times-per-week value.`);
+    for (const h of o.habits) if (h.times != null && Number(h.times) > 0 && !(Number.isInteger(Number(h.every)) && h.every >= 1 && h.every <= 365 && Number.isInteger(Number(h.times)) && h.times <= h.every && keyOk(String(h.anchor)))) throw new Error(`"${h.name}" has a bad times-every-N-days value.`);
+    // Older exports stored "N times a week" as perWeek. It becomes N times every 7 days, counted from a Monday as before.
+    for (const h of o.habits) if (Number(h.perWeek) > 0 && !(Number(h.times) > 0)) { const s0 = keyOk(String(h.startDay)) ? h.startDay : today(); Object.assign(h, { times: Number(h.perWeek), every: 7, anchor: weekStart(s0) }); delete h.perWeek; }
     for (const g of o.goals) if (!g.id || !g.name || !(Number(g.target) > 0)) throw new Error("A goal is missing its id, name or target.");
     for (const t of o.tasks) if (!t.id || !t.title) throw new Error("A task is missing its id or title.");
     for (const [hid, days] of Object.entries(o.logs)) for (const [k, v] of Object.entries(days)) if (!keyOk(k) || !["done", "rest"].includes(v)) throw new Error(`Bad log entry for ${hid} on ${k}.`);
@@ -285,13 +289,29 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   const goalById = id => S.goals.find(g => g.id === id);
   const scheduled = (h, k) => !h.days || h.days.length === 0 || h.days.includes(weekday(k));
   const logOf = (h, k) => (S.logs[h.id] || {})[k];
-  const isWeekly = h => Number(h.perWeek) > 0;
-  // Weeks start on Monday. A rest day lowers that week's target so it never counts against you.
-  const weekStart = k => addDays(k, -((weekday(k) + 6) % 7));
-  function weekProgress(h, k) {
-    const ws = weekStart(k); let done = 0, rests = 0;
-    for (let i = 0; i < 7; i++) { const l = logOf(h, addDays(ws, i)); if (l === "done") done++; else if (l === "rest") rests++; }
-    return { done, target: Math.min(Number(h.perWeek), 7 - rests) };
+  // Count habits: "times" check-ins in each block of "every" days. Blocks run back to back from the anchor day.
+  const isCount = h => Number(h.times) > 0;
+  const isCalWeek = h => Number(h.every) === 7 && weekday(h.anchor) === 1;
+  function periodStart(h, k) {
+    const n = Number(h.every); let s = h.anchor;
+    if (s <= k) { for (let nx = addDays(s, n); nx <= k; nx = addDays(nx, n)) s = nx; }
+    else while (s > k) s = addDays(s, -n);
+    return s;
+  }
+  // A rest day lowers that period's target so it never counts against you.
+  function progressFrom(h, s) {
+    const n = Number(h.every); let done = 0, rests = 0;
+    for (let i = 0; i < n; i++) { const l = logOf(h, addDays(s, i)); if (l === "done") done++; else if (l === "rest") rests++; }
+    return { done, target: Math.min(Number(h.times), n - rests), start: s, end: addDays(s, n - 1) };
+  }
+  const periodProgress = (h, k) => progressFrom(h, periodStart(h, k));
+  const runUnit = h => isCalWeek(h) ? "weeks" : "periods";
+  // "this week", "· 4 days left", or "· by Tue 4 Nov" for a past day.
+  function periodLeft(h, k, p) {
+    if (isCalWeek(h)) return "this week";
+    if (k !== today()) return `· by ${fmtDay(p.end)}`;
+    const left = daysBetween(k, p.end) + 1;
+    return left === 1 ? "· last day" : `· ${left} days left`;
   }
   const viewDay = () => { const t = today(); return ui.day && ui.day < t && ui.day >= addDays(t, -6) ? ui.day : t; };
 
@@ -302,7 +322,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       if (h.startDay && k < h.startDay) { out.push({ k, s: "none" }); continue; }
       if (!scheduled(h, k)) { out.push({ k, s: "none" }); continue; }
       const l = logOf(h, k);
-      out.push({ k, s: l === "done" ? "on" : l === "rest" ? "rest" : (k === t ? "open" : isWeekly(h) ? "none" : "off") });
+      out.push({ k, s: l === "done" ? "on" : l === "rest" ? "rest" : (k === t ? "open" : isCount(h) ? "none" : "off") });
     }
     return out;
   }
@@ -314,17 +334,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     return { w, done, counted, run: cur, best };
   }
   const firstDay = h => { const keys = Object.keys(S.logs[h.id] || {}).sort(); const s0 = h.startDay || keys[0] || today(); return keys[0] && keys[0] < s0 ? keys[0] : s0; };
-  // Runs: daily habits count scheduled, non-rest days done in a row; weekly habits count weeks that met their target.
-  // Today (or this week) only adds to a run once done; it never breaks one.
+  // Runs: daily habits count scheduled, non-rest days done in a row; count habits count periods that met their target.
+  // Today (or the current period) only adds to a run once done; it never breaks one.
   function habitRuns(h) {
     const t = today(); let cur = 0, best = 0, guard = 0;
-    if (isWeekly(h)) {
-      const thisWeek = weekStart(t);
-      for (let ws = weekStart(firstDay(h)); ws <= thisWeek && guard++ < 700; ws = addDays(ws, 7)) {
-        const wp = weekProgress(h, ws);
-        if (wp.target === 0) continue;
-        if (wp.done >= wp.target) { cur++; best = Math.max(best, cur); }
-        else if (ws !== thisWeek) cur = 0;
+    if (isCount(h)) {
+      const now = periodStart(h, t), n = Number(h.every);
+      for (let s = periodStart(h, firstDay(h)); s <= now && guard++ < 5000; s = addDays(s, n)) {
+        const p = progressFrom(h, s);
+        if (p.target === 0) continue;
+        if (p.done >= p.target) { cur++; best = Math.max(best, cur); }
+        else if (s !== now) cur = 0;
       }
     } else {
       for (let k = firstDay(h); k <= t && guard++ < 5000; k = addDays(k, 1)) {
@@ -381,13 +401,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   }
   function dotsHtml(w) { return `<span class="dots" aria-hidden="true">${w.map(x => `<i class="dot ${x.s === "on" ? "on" : x.s === "rest" ? "rest" : x.s === "off" ? "off" : ""}"></i>`).join("")}</span>`; }
 
-  const schedText = h => isWeekly(h) ? `${h.perWeek}× a week` : !h.days || !h.days.length ? "Every day" : h.days.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => DAY_LETTERS[d]).join(" ");
+  const schedText = h => isCount(h) ? (isCalWeek(h) ? `${h.times}× a week` : `${h.times}× every ${h.every} days`) : !h.days || !h.days.length ? "Every day" : h.days.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => DAY_LETTERS[d]).join(" ");
   function habitRow(h, k) {
     const l = logOf(h, k), st = habitStats(h);
     const label = l === "done" ? "done" : l === "rest" ? "rest day" : "not done";
     const amt = h.goalId && h.amount ? ` +${h.amount}` : "";
-    const wp = isWeekly(h) && weekProgress(h, k);
-    const progress = wp ? `<span>${wp.done} of ${wp.target} this week</span>${st.run > 1 ? `<span>${st.run} weeks in a row</span>` : ""}`
+    const wp = isCount(h) && periodProgress(h, k);
+    const progress = wp ? `<span>${wp.done} of ${wp.target} ${periodLeft(h, k, wp)}</span>${st.run > 1 ? `<span>${st.run} ${runUnit(h)} in a row</span>` : ""}`
       : `<span>${st.done} of ${st.counted || 0} scheduled days</span>${st.run > 1 ? `<span>${st.run} in a row</span>` : ""}`;
     return `<div class="row ${l === "done" ? "done" : ""}">
       <button type="button" class="check ${l === "rest" ? "rest" : ""}" aria-pressed="${l === "done"}" aria-label="${esc(h.name)}, ${label}${k === today() ? "" : " on " + fmtDay(k)}. Tap to change." data-act="toggleHabit" data-id="${h.id}" data-day="${k}">${ICON_CHECK}</button>
@@ -450,8 +470,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     }
     return h + `</div>`;
   }
-  // A weekly habit counts toward today's total until its week is met, or once it is done that day.
-  const countsOn = (h, d) => !isWeekly(h) || logOf(h, d) === "done" || (() => { const wp = weekProgress(h, d); return wp.done < wp.target; })();
+  // A count habit counts toward today's total until its period is met, or once it is done that day.
+  const countsOn = (h, d) => !isCount(h) || logOf(h, d) === "done" || (() => { const wp = periodProgress(h, d); return wp.done < wp.target; })();
   function renderToday() {
     const t = today(), d = viewDay(), past = d !== t;
     const due = S.habits.filter(h => !h.archived && scheduled(h, d) && (past || !(h.startDay && d < h.startDay)));
@@ -517,7 +537,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     return `${e ? "" : "<h2>New habit</h2>"}<form class="card" data-form="habit" data-id="${e ? x.id : ""}" data-autofocus>
       <label for="h-name">Habit<input id="h-name" name="name" required maxlength="80" placeholder="Read for 20 minutes" value="${esc(x.name)}"></label>
       <div><span class="hint" style="font-weight:600">Days (none selected = every day)</span><div class="days" style="margin-top:6px">${[1, 2, 3, 4, 5, 6, 0].map(i => `<button type="button" aria-pressed="${draftDays.includes(i)}" data-act="toggleDay" data-day="${i}" aria-label="${DAY_LETTERS[i]}">${DAY_LETTERS[i]}</button>`).join("")}</div></div>
-      <label for="h-week">Or a number of times a week, on any days<select id="h-week" name="perWeek"><option value="0">Use the days above</option>${[1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${Number(x.perWeek) === n ? "selected" : ""}>${n}× a week</option>`).join("")}</select></label>
+      <div><span class="hint" style="font-weight:600">Or a number of times, on any days</span>
+      <div class="fields" style="margin-top:6px"><label for="h-times">Times<select id="h-times" name="times"><option value="0">Use the days above</option>${Array.from({ length: 20 }, (_, i) => i + 1).map(n => `<option value="${n}" ${Number(x.times) === n ? "selected" : ""}>${n}×</option>`).join("")}</select></label>
+      <label for="h-every">Every (days)<input id="h-every" name="every" type="number" inputmode="numeric" min="2" max="365" step="1" value="${esc(isCount(x) ? x.every : 7)}"></label></div>
+      <p class="hint" style="margin-top:6px">For example 3× every 10 days. The count starts again every 10 days, from the day you save${e && isCount(x) ? " (or keeps its current timing if you don't change the days)" : ""}.</p></div>
       <div class="fields"><label for="h-goal">Counts toward<select id="h-goal" name="goalId">${goalOptions(x.goalId || "")}</select></label>
       <label for="h-amt">Amount per check-in<input id="h-amt" name="amount" type="number" inputmode="decimal" step="any" min="0" value="${esc(x.goalId || !e ? x.amount || 1 : 1)}"></label></div>
       ${e ? `<p class="hint">Changing the goal or amount also changes what past check-ins added to goals. Check-in history stays.</p>` : ""}
@@ -528,7 +551,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     if (det) return renderHabitDetail(det);
     const row = x => {
       const st = habitStats(x);
-      const prog = isWeekly(x) ? `<span>${weekProgress(x, today()).done} of ${weekProgress(x, today()).target} this week</span>` : `${dotsHtml(st.w)}<span>${st.done} of ${st.counted} last 7</span>`;
+      const pp = isCount(x) && periodProgress(x, today());
+      const prog = pp ? `<span>${pp.done} of ${pp.target} ${periodLeft(x, today(), pp)}</span>` : `${dotsHtml(st.w)}<span>${st.done} of ${st.counted} last 7</span>`;
       return `<div class="row"><div class="main"><button type="button" class="linkish title" data-act="openHabit" data-id="${x.id}">${esc(x.name)}</button><div class="sub"><span>${schedText(x)}</span>${prog}${goalChip(x.goalId, x.goalId ? ` +${x.amount}` : "")}</div></div>
         <button type="button" class="mini" data-act="openHabit" data-id="${x.id}" aria-label="Open ${esc(x.name)}">Open</button></div>`;
     };
@@ -548,7 +572,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     for (let i = 0; i < (weekday(first) + 6) % 7; i++) g += "<span></span>";
     for (let k = first; k.slice(0, 7) === ym; k = addDays(k, 1)) {
       const l = logOf(h, k), fut = k > t;
-      const cls = l === "done" ? "on" : l === "rest" ? "rest" : !scheduled(h, k) || isWeekly(h) || k < start || k === t ? "na" : fut ? "" : "off";
+      const cls = l === "done" ? "on" : l === "rest" ? "rest" : !scheduled(h, k) || isCount(h) || k < start || k === t ? "na" : fut ? "" : "off";
       const state = l === "done" ? "done" : l === "rest" ? "rest day" : fut ? "future" : "not done";
       g += `<button type="button" class="${cls} ${k === t ? "today" : ""}" data-act="cycleDay" data-id="${h.id}" data-day="${k}" ${fut ? "disabled" : ""} aria-label="${fmtDay(k)}, ${state}${fut ? "" : ". Tap to change."}">${parse(k).getDate()}</button>`;
     }
@@ -557,9 +581,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       <div class="cal">${g}</div><p class="hint">Tap a past day to cycle: done, rest, not done.</p></div>`;
   }
   function renderHabitDetail(x) {
-    const st = habitStats(x), tot = habitTotals(x), wk = isWeekly(x);
-    const unit = wk ? "weeks" : "days";
-    const rate = wk ? `${tot.done30} time${tot.done30 === 1 ? "" : "s"} in the last 30 days (target about ${Math.round(x.perWeek * 30 / 7)})`
+    const st = habitStats(x), tot = habitTotals(x), wk = isCount(x), pp = wk && periodProgress(x, today());
+    const unit = wk ? runUnit(x) : "days";
+    const rate = wk ? `${tot.done30} time${tot.done30 === 1 ? "" : "s"} in the last 30 days (target about ${Math.round(x.times * 30 / x.every)})${isCalWeek(x) ? "" : `. This period runs ${fmtDay(pp.start)} to ${fmtDay(pp.end)}`}`
       : tot.counted30 ? `${tot.done30} of ${tot.counted30} scheduled days in the last 30 (${Math.round(tot.done30 / tot.counted30 * 100)}%)` : "No scheduled days yet in the last 30";
     let h = `<div class="btns" style="margin-top:4px"><button type="button" class="mini" data-act="closeHabit" style="padding-left:0">‹ All habits</button></div>
       <div class="card"><div><div class="title" style="font-weight:700;font-size:18px">${esc(x.name)}</div>
@@ -568,7 +592,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         <div><b>${st.run}</b><span>${unit} in a row now</span></div>
         <div><b>${st.best}</b><span>best run (${unit})</span></div>
         <div><b>${tot.total}</b><span>times done</span></div>
-        <div><b>${wk ? `${weekProgress(x, today()).done}/${weekProgress(x, today()).target}` : tot.counted30 ? Math.round(tot.done30 / tot.counted30 * 100) + "%" : "–"}</b><span>${wk ? "this week" : "last 30 days"}</span></div>
+        <div><b>${wk ? `${pp.done}/${pp.target}` : tot.counted30 ? Math.round(tot.done30 / tot.counted30 * 100) + "%" : "–"}</b><span>${wk ? (isCalWeek(x) ? "this week" : "this period") : "last 30 days"}</span></div>
       </div><p class="hint">${rate}.</p>
       <div class="btns"><button type="button" class="mini" data-act="editHabit" data-id="${x.id}">Edit</button><button type="button" class="mini muted" data-act="archiveHabit" data-id="${x.id}">${x.archived ? "Unarchive" : "Archive"}</button><button type="button" class="mini danger" data-act="askDeleteHabit" data-id="${x.id}">Delete</button></div></div>`;
     h += confirmBox();
@@ -750,7 +774,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     const editId = f.dataset.id;
     const upsert = (list, fields, make) => { const x = editId && list.find(i => i.id === editId); if (x) Object.assign(x, fields); else if (!editId) list.push({ ...make(), ...fields }); };
     if (kind === "goal") { const target = num(fd.get("target"), 0); const name = String(fd.get("name")).trim(); if (!(target > 0) || !name) return; upsert(S.goals, { name, target, unit: String(fd.get("unit") || "").trim(), deadline: fd.get("deadline") || null }, () => ({ id: uid(), createdDay: today() })); }
-    if (kind === "habit") { const gid = fd.get("goalId") || null, name = String(fd.get("name")).trim(); if (!name) return; const perWeek = Math.max(0, Math.min(6, Math.round(Number(fd.get("perWeek")) || 0))); upsert(S.habits, { name, days: perWeek ? [] : draftDays.slice(), perWeek, goalId: gid, amount: gid ? num(fd.get("amount"), 1) : 0 }, () => ({ id: uid(), startDay: today() })); }
+    if (kind === "habit") { const gid = fd.get("goalId") || null, name = String(fd.get("name")).trim(); if (!name) return; const every = Math.max(2, Math.min(365, Math.round(Number(fd.get("every")) || 7))), times = Math.max(0, Math.min(every, Math.round(Number(fd.get("times")) || 0)));
+      // Keep a count habit's period timing unless its length changes; otherwise periods start today.
+      const old = editId && S.habits.find(i => i.id === editId), anchor = times ? (old && isCount(old) && Number(old.every) === every ? old.anchor : today()) : null;
+      upsert(S.habits, { name, days: times ? [] : draftDays.slice(), times, every: times ? every : null, anchor, goalId: gid, amount: gid ? num(fd.get("amount"), 1) : 0 }, () => ({ id: uid(), startDay: today() })); }
     if (kind === "task") { const gid = fd.get("goalId") || null, title = String(fd.get("title")).trim(); if (!title) return; upsert(S.tasks, { title, due: fd.get("due") || null, priority: Number(fd.get("priority")) || 2, goalId: gid, amount: gid ? num(fd.get("amount"), 1) : 0 }, () => ({ id: uid(), done: false })); }
     if (kind === "log") { const amount = Number(fd.get("amount")); if (!Number.isFinite(amount) || amount === 0) return; S.entries.push({ id: uid(), goalId: f.dataset.id, day: today(), amount, note: String(fd.get("note") || "").trim() }); }
     S.started = true; ui.form = null; save(); render();
