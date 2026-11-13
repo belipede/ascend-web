@@ -8,8 +8,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Ascend">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#f3f5f4" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0e1312" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fbf9f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111614" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -18,34 +18,39 @@
 <style>
 /* Layout: single phone column, sticky date header, fixed bottom tab bar; items are quiet rows, the goal link is the one secondary line. */
 :root {
-  --bg: #f3f5f4;
+  --bg: #fbf9f5;
   --surface: #ffffff;
-  --ink: #18211f;
-  --muted: #5f6b68;
-  --line: #dde3e1;
-  --accent: #2f6f5e;
-  --accent-soft: #e1eee9;
+  --ink: #1d2321;
+  --muted: #66706c;
+  --line: #ebe6dd;
+  --accent: #127a5c;
+  --accent-bright: #21a366;
+  --accent-soft: #e3f4ea;
   --accent-ink: #ffffff;
-  --warn: #9a5b12;
-  --warn-soft: #f7ecdc;
+  --warn: #a8560d;
+  --warn-soft: #fdeedd;
   --rest: #6a6f86;
-  --rest-soft: #e8e9f1;
+  --rest-soft: #ecedf5;
+  --sunny: #fff6dc;
   --font-display: "Bricolage Grotesque", ui-rounded, -apple-system, "Segoe UI", sans-serif;
   --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-  --radius: 14px;
+  --radius: 18px;
+  --shadow: 0 1px 2px rgba(60, 45, 20, .04), 0 4px 14px rgba(60, 45, 20, .05);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0e1312; --surface: #161d1b; --ink: #e6ecea; --muted: #9aa7a3; --line: #26302d;
-    --accent: #63b89f; --accent-soft: #1c302a; --accent-ink: #0b1210;
-    --warn: #e0a65a; --warn-soft: #2f2414; --rest: #a6aac4; --rest-soft: #23253a;
+    --bg: #111614; --surface: #1a211e; --ink: #e9eeec; --muted: #9faba7; --line: #2a3330;
+    --accent: #63c7a2; --accent-bright: #4fd19c; --accent-soft: #1d342b; --accent-ink: #0b1210;
+    --warn: #f0b066; --warn-soft: #33261a; --rest: #a6aac4; --rest-soft: #23253a; --sunny: #2c2717;
+    --shadow: none;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0e1312; --surface: #161d1b; --ink: #e6ecea; --muted: #9aa7a3; --line: #26302d;
-  --accent: #63b89f; --accent-soft: #1c302a; --accent-ink: #0b1210;
-  --warn: #e0a65a; --warn-soft: #2f2414; --rest: #a6aac4; --rest-soft: #23253a;
+  --bg: #111614; --surface: #1a211e; --ink: #e9eeec; --muted: #9faba7; --line: #2a3330;
+  --accent: #63c7a2; --accent-bright: #4fd19c; --accent-soft: #1d342b; --accent-ink: #0b1210;
+  --warn: #f0b066; --warn-soft: #33261a; --rest: #a6aac4; --rest-soft: #23253a; --sunny: #2c2717;
+  --shadow: none;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -62,16 +67,16 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-h
 .sync { font-size: 12px; color: var(--muted); white-space: nowrap; }
 h2 { font-family: var(--font-display); font-weight: 500; font-size: 19px; margin: 26px 0 10px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 h2 small { font-family: var(--font-body); font-size: 13px; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
-.list { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.list { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
 .row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; min-height: 60px; border-top: 1px solid var(--line); }
 .row:first-child { border-top: 0; }
 .row .main { flex: 1; min-width: 0; }
 .row .title { font-weight: 600; overflow-wrap: anywhere; }
 .row .sub { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; font-variant-numeric: tabular-nums; }
 .row.done .title { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
-.check { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--line); background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--accent-ink); }
+.check { --c: var(--accent-bright); --ci: #fff; flex: none; width: 44px; height: 44px; border-radius: 50%; border: 2.5px solid color-mix(in srgb, var(--c) 55%, var(--line)); background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--ci); -webkit-touch-callout: none; user-select: none; }
 .check svg { width: 20px; height: 20px; opacity: 0; }
-.check[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); }
+.check[aria-pressed="true"] { background: var(--c); border-color: var(--c); }
 .check[aria-pressed="true"] svg { opacity: 1; }
 .check.rest { border-style: dashed; border-color: var(--rest); color: var(--rest); }
 .check.rest svg { display: none; }
@@ -84,22 +89,22 @@ h2 small { font-family: var(--font-body); font-size: 13px; color: var(--muted); 
 .mini.danger { color: var(--warn); }
 .dots { display: flex; gap: 3px; align-items: center; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
-.dot.on { background: var(--accent); }
+.dot.on { background: var(--c, var(--accent-bright)); }
 .dot.rest { background: transparent; border: 1.5px dashed var(--rest); }
 .dot.off { background: transparent; border: 1.5px solid var(--line); }
 .goal { padding: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
 .goal:first-child { border-top: 0; }
 .goal .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
 .goal .num { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--muted); white-space: nowrap; }
-.bar { height: 8px; border-radius: 99px; background: var(--accent-soft); overflow: hidden; }
-.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.bar { height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--c, var(--accent-bright)) 16%, transparent); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--c, var(--accent-bright)); border-radius: 99px; }
 .pace { font-size: 13px; color: var(--muted); }
 .empty { padding: 18px 14px; color: var(--muted); font-size: 15px; }
 .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 4px; }
-.summary div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.summary div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 10px 12px; min-width: 0; }
 .summary b { display: block; font-family: var(--font-display); font-size: 22px; font-variant-numeric: tabular-nums; }
 .summary span { font-size: 12px; color: var(--muted); }
-form.card, .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+form.card, .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); font-weight: 600; }
 input, select, textarea { font: inherit; font-size: 16px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 44px; width: 100%; }
 textarea { min-height: 140px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
@@ -108,7 +113,7 @@ textarea { min-height: 140px; font-family: ui-monospace, Menlo, monospace; font-
 .days { display: flex; gap: 6px; flex-wrap: wrap; }
 .days button { font: inherit; font-size: 13px; font-weight: 600; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); color: var(--muted); cursor: pointer; }
 .days button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.btn { font: inherit; font-weight: 700; min-height: 46px; border-radius: 12px; border: 0; background: var(--accent); color: var(--accent-ink); padding: 0 18px; cursor: pointer; }
+.btn { font: inherit; font-weight: 700; min-height: 46px; border-radius: 14px; border: 0; background: var(--accent); color: var(--accent-ink); padding: 0 18px; cursor: pointer; }
 .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
 .btn.danger { background: var(--warn); color: var(--surface); }
 .btns { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -135,7 +140,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .cal .h { font-size: 11px; font-weight: 600; color: var(--muted); text-align: center; padding-bottom: 2px; }
 .cal button { font: inherit; font-size: 14px; font-variant-numeric: tabular-nums; aspect-ratio: 1; min-height: 40px; width: 100%; border-radius: 50%; border: 1.5px solid transparent; background: transparent; color: var(--ink); cursor: pointer; padding: 0; }
-.cal button.on { background: var(--accent); color: var(--accent-ink); }
+.cal button.on { background: var(--c, var(--accent)); color: var(--ci, var(--accent-ink)); }
 .cal button.rest { border-style: dashed; border-color: var(--rest); color: var(--rest); }
 .cal button.off { border-color: var(--line); }
 .cal button.na { color: var(--muted); }
@@ -146,6 +151,57 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .summary.four { grid-template-columns: repeat(2, 1fr); }
 @media (min-width: 420px) { .summary.four { grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 380px) { .fields { grid-template-columns: 1fr; } h1 { font-size: 26px; } }
+
+/* v1.4: brighter look, goal-first Today, check-off feedback */
+.hello { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 4px 0 2px; padding: 14px 16px; border-radius: var(--radius); background: linear-gradient(135deg, var(--sunny), var(--accent-soft)); }
+.hello p { margin: 0; font-size: 15px; }
+.hello p b { font-family: var(--font-display); font-weight: 700; font-size: 17px; display: block; }
+.ring { flex: none; width: 58px; height: 58px; position: relative; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring span { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+.goalstrip { display: flex; gap: 10px; overflow-x: auto; margin: 14px -16px 0; padding: 2px 16px 6px; scroll-snap-type: x proximity; scroll-padding-inline: 16px; scrollbar-width: none; }
+.goalstrip::-webkit-scrollbar { display: none; }
+.gcard { --c: var(--accent-bright); flex: 0 0 auto; width: 150px; scroll-snap-align: start; text-align: left; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--c); border-radius: 16px; padding: 10px 12px; box-shadow: var(--shadow); cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+.gcard[aria-pressed="true"] { background: color-mix(in srgb, var(--c) 12%, var(--surface)); border-color: var(--c); }
+.gcard .gname { font-weight: 700; font-size: 14px; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; min-height: 2.5em; }
+.gcard .bar { display: block; }
+.gcard .gfoot { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--muted); gap: 6px; }
+.gcard .gfoot b { color: var(--ink); font-size: 14px; font-variant-numeric: tabular-nums; }
+.paceword { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.paceword.ahead, .paceword.ontrack, .paceword.done { color: var(--accent); }
+.paceword.behind { color: var(--warn); }
+.ghead { font-family: var(--font-body); display: flex; justify-content: flex-start; align-items: center; gap: 8px; margin: 22px 2px 8px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.ghead i { width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--line)); flex: none; }
+.ghead .em { font-size: 15px; letter-spacing: 0; }
+.row.slim { min-height: 56px; padding: 6px 14px 6px 8px; }
+.row.slim .title { font-weight: 500; }
+.row .em { margin-right: 6px; }
+.row .stat { flex: none; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; max-width: 45%; }
+.row .stat.warn { color: var(--warn); font-weight: 600; }
+.row .stat.hi { color: var(--warn); font-weight: 700; }
+.fold { font: inherit; font-size: 14px; font-weight: 600; color: var(--muted); background: none; border: 0; padding: 14px 2px 6px; min-height: 44px; cursor: pointer; }
+.focusbar { margin: 12px 0 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; }
+.tip { font-size: 13px; color: var(--muted); margin: 10px 2px 0; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatches button { width: 36px; height: 36px; border-radius: 50%; border: 3px solid var(--surface); background: var(--c); box-shadow: 0 0 0 1px var(--line); cursor: pointer; padding: 0; font-size: 12px; color: var(--muted); }
+.swatches button.none { background: var(--bg); }
+.swatches button[aria-checked="true"] { box-shadow: 0 0 0 2.5px var(--ink); }
+.emojis { display: flex; flex-wrap: wrap; gap: 6px; }
+.emojis button { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); font-size: 20px; cursor: pointer; padding: 0; }
+.emojis button[aria-checked="true"] { border-color: var(--ink); background: var(--accent-soft); }
+.toast { position: fixed; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; width: min(528px, calc(100% - 32px)); display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 16px; border-radius: 16px; background: var(--ink); color: var(--bg); box-shadow: 0 8px 28px rgba(0,0,0,.18); font-size: 15px; }
+.toast span { flex: 1; min-width: 0; }
+.toast button { font: inherit; font-weight: 700; color: var(--accent-bright); background: none; border: 0; padding: 8px 10px; min-height: 40px; cursor: pointer; }
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 30; overflow: hidden; }
+.confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; opacity: .95; }
+@media (prefers-reduced-motion: no-preference) {
+  .check.pop { animation: pop .35s ease; }
+  @keyframes pop { 0% { transform: scale(.8); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+  .toast { animation: rise .25s ease; }
+  @keyframes rise { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  .confetti i { animation: fall 1.6s ease-in forwards; }
+  @keyframes fall { to { transform: translateY(105vh) rotate(540deg); opacity: .9; } }
+}
 </style>
 </head>
 <body>
@@ -157,14 +213,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       <p class="eyebrow" id="eyebrow">Today</p>
       <h1 id="heading">Ascend</h1>
     </div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
-      <button type="button" class="mini" id="reportBtn" data-act="openReport" style="padding:4px 0;min-height:32px">Report a bug</button>
-      <span class="sync" id="sync">Loading…</span>
-    </div>
+    <span class="sync" id="sync" hidden>Loading…</span>
   </header>
   <div id="report"></div>
   <main id="view"></main>
-  <p class="proto">Ascend web prototype <span id="ver"></span> · for testing. The real app will be the native iPhone build.</p>
 </div>
 
 <nav class="tabs" aria-label="Sections">
@@ -194,7 +246,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- State ----------
-  const VERSION = "v1.3-web";
+  const VERSION = "v1.4-web";
   const ISSUES = "https://github.com/belipede/ascend-web/issues";
   const EMPTY = () => ({ v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], opens: {}, trialStart: null, savedAt: 0 });
   let FB = { col: null, list: [], open: false, kind: "bug", text: "", sent: "", err: "" };
@@ -212,6 +264,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     for (const h of o.habits) if (h.times != null && Number(h.times) > 0 && !(Number.isInteger(Number(h.every)) && h.every >= 1 && h.every <= 365 && Number.isInteger(Number(h.times)) && h.times <= h.every && keyOk(String(h.anchor)))) throw new Error(`"${h.name}" has a bad times-every-N-days value.`);
     // Older exports stored "N times a week" as perWeek. It becomes N times every 7 days, counted from a Monday as before.
     for (const h of o.habits) if (Number(h.perWeek) > 0 && !(Number(h.times) > 0)) { const s0 = keyOk(String(h.startDay)) ? h.startDay : today(); Object.assign(h, { times: Number(h.perWeek), every: 7, anchor: weekStart(s0) }); delete h.perWeek; }
+    for (const x of [...o.goals, ...o.habits]) { if (x.color != null && !COLORS[x.color]) delete x.color; if (x.emoji != null && typeof x.emoji !== "string") delete x.emoji; }
     for (const g of o.goals) if (!g.id || !g.name || !(Number(g.target) > 0)) throw new Error("A goal is missing its id, name or target.");
     for (const t of o.tasks) if (!t.id || !t.title) throw new Error("A task is missing its id or title.");
     for (const [hid, days] of Object.entries(o.logs)) for (const [k, v] of Object.entries(days)) if (!keyOk(k) || !["done", "rest"].includes(v)) throw new Error(`Bad log entry for ${hid} on ${k}.`);
@@ -378,18 +431,49 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     for (const t of S.tasks) if (t.goalId === g.id && t.done) p += Number(t.amount) || 0;
     return p;
   }
+  // Money units show as a prefix ("$1,500"); everything else as "16 books". Big numbers drop decimals.
+  const CUR = { "$": "$", "usd": "$", "sgd": "S$", "s$": "S$", "aud": "A$", "€": "€", "eur": "€", "£": "£", "gbp": "£", "¥": "¥" };
+  const isCur = unit => !!CUR[String(unit || "").trim().toLowerCase()];
+  const fmtNum = n => { n = Number(n) || 0; const r = Math.abs(n) >= 100 ? Math.round(n) : Math.round(n * 10) / 10; return r.toLocaleString(undefined, { maximumFractionDigits: 1 }); };
+  function fmtAmt(n, unit) {
+    const u = String(unit || "").trim(), c = CUR[u.toLowerCase()];
+    return c ? `${n < 0 ? "-" : ""}${c}${fmtNum(Math.abs(n))}` : `${fmtNum(n)}${u ? " " + esc(u) : ""}`;
+  }
+  // "16 of 24 books" or "$1,500 of $5,000"
+  const ofTarget = (g, p) => `${isCur(g.unit) ? fmtAmt(p, g.unit) : fmtNum(p)} of ${fmtAmt(Number(g.target), g.unit)}`;
   function pace(g, p) {
     if (!g.deadline) return "";
     const left = daysBetween(today(), g.deadline);
     const remaining = Math.max(0, g.target - p);
-    if (remaining === 0) return "Target reached";
-    if (left < 0) return `Deadline passed ${fmtDay(g.deadline)}`;
-    if (left === 0) return `${fmtNum(remaining)} ${esc(g.unit)} to go, due today`;
-    const per = remaining / left;
-    const perWeek = per * 7;
-    return `${fmtNum(remaining)} ${esc(g.unit)} to go in ${left} day${left === 1 ? "" : "s"} · about ${fmtNum(perWeek >= 1 ? perWeek : per)} ${esc(g.unit)} per ${perWeek >= 1 ? "week" : "day"}`;
+    if (remaining === 0) return "Target reached. Brilliant work!";
+    if (left < 0) return `Deadline was ${fmtDay(g.deadline)}. Keep going or set a new date.`;
+    if (left === 0) return `${fmtAmt(remaining, g.unit)} to go, due today`;
+    const perWeek = remaining / left * 7, perDay = remaining / left;
+    return `${fmtAmt(remaining, g.unit)} to go in ${left} day${left === 1 ? "" : "s"} · about ${perWeek >= 1 ? fmtAmt(perWeek, g.unit) + " a week" : fmtAmt(perDay, g.unit) + " a day"}`;
   }
-  const fmtNum = n => Number.isInteger(n) ? String(n) : n.toFixed(1);
+  // Compares progress with an even pace from the day the goal was made to its deadline.
+  function paceStatus(g, p) {
+    if (p >= Number(g.target)) return ["done", "Reached 🎉"];
+    if (!g.deadline || !g.createdDay) return null;
+    const total = daysBetween(g.createdDay, g.deadline), gone = daysBetween(g.createdDay, today());
+    if (gone > total) return ["behind", "Past deadline"];
+    if (total <= 0 || gone <= 0) return ["ontrack", "Just started"];
+    const r = p / (g.target * gone / total);
+    return r >= 1.1 ? ["ahead", "Ahead"] : r >= 0.9 ? ["ontrack", "On track"] : ["behind", "A bit behind"];
+  }
+  const pctOf = g => Math.min(100, Math.round(goalProgress(g) / g.target * 100));
+
+  // ---------- Colours and emoji ----------
+  // Each colour carries the check-mark colour that stays readable on it.
+  const COLORS = { green: ["#21a366", "#fff"], sky: ["#2f86eb", "#fff"], coral: ["#f0604d", "#fff"], violet: ["#7c5cf0", "#fff"], orange: ["#f08a24", "#1d2321"], teal: ["#0f9d8f", "#fff"], pink: ["#e0458f", "#fff"], sun: ["#e8b100", "#1d2321"] };
+  const COLOR_KEYS = Object.keys(COLORS);
+  const EMOJIS = ["📚", "🏃", "💪", "🧘", "💧", "🥗", "💰", "✍️", "🎯", "🌱", "😴", "🎵"];
+  const goalColor = g => COLORS[g.color] ? g.color : COLOR_KEYS[Math.max(0, S.goals.indexOf(g)) % COLOR_KEYS.length];
+  // Habits without a colour or goal still get one of their own, so the list never looks grey.
+  const itemColor = x => { if (COLORS[x.color]) return x.color; const g = x.goalId && goalById(x.goalId); if (g) return goalColor(g); const i = S.habits.indexOf(x); return i >= 0 ? COLOR_KEYS[(i + 3) % COLOR_KEYS.length] : null; };
+  const cvars = key => key && COLORS[key] ? `--c:${COLORS[key][0]};--ci:${COLORS[key][1]}` : "";
+  const emojiOf = x => x && x.emoji ? `<span class="em" aria-hidden="true">${esc(x.emoji)}</span>` : "";
+  const firstGrapheme = str => { str = String(str || "").trim(); if (!str) return ""; try { return [...new Intl.Segmenter().segment(str)][0].segment; } catch (e) { return Array.from(str).slice(0, 2).join(""); } };
 
   // ---------- Rendering ----------
   const view = document.getElementById("view");
@@ -397,45 +481,48 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
   function goalChip(id, extra = "") {
     const g = id && goalById(id);
-    return g ? `<span class="chip">↑ ${esc(g.name)}${extra}</span>` : "";
+    return g ? `<span class="chip" style="${cvars(goalColor(g))};background:color-mix(in srgb, var(--c) 14%, transparent);color:var(--ink)">${g.emoji ? esc(g.emoji) : "↑"} ${esc(g.name)}${extra}</span>` : "";
   }
+  const amtTag = x => x.goalId && Number(x.amount) ? ` +${fmtNum(x.amount)}` : "";
   function dotsHtml(w) { return `<span class="dots" aria-hidden="true">${w.map(x => `<i class="dot ${x.s === "on" ? "on" : x.s === "rest" ? "rest" : x.s === "off" ? "off" : ""}"></i>`).join("")}</span>`; }
 
   const schedText = h => isCount(h) ? (isCalWeek(h) ? `${h.times}× a week` : `${h.times}× every ${h.every} days`) : !h.days || !h.days.length ? "Every day" : h.days.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => DAY_LETTERS[d]).join(" ");
+  // Today rows are one line: circle, name, a short status. Press and hold the circle for a rest day.
   function habitRow(h, k) {
-    const l = logOf(h, k), st = habitStats(h);
+    const l = logOf(h, k);
     const label = l === "done" ? "done" : l === "rest" ? "rest day" : "not done";
-    const amt = h.goalId && h.amount ? ` +${h.amount}` : "";
     const wp = isCount(h) && periodProgress(h, k);
-    const progress = wp ? `<span>${wp.done} of ${wp.target} ${periodLeft(h, k, wp)}</span>${st.run > 1 ? `<span>${st.run} ${runUnit(h)} in a row</span>` : ""}`
-      : `<span>${st.done} of ${st.counted || 0} scheduled days</span>${st.run > 1 ? `<span>${st.run} in a row</span>` : ""}`;
-    return `<div class="row ${l === "done" ? "done" : ""}">
-      <button type="button" class="check ${l === "rest" ? "rest" : ""}" aria-pressed="${l === "done"}" aria-label="${esc(h.name)}, ${label}${k === today() ? "" : " on " + fmtDay(k)}. Tap to change." data-act="toggleHabit" data-id="${h.id}" data-day="${k}">${ICON_CHECK}</button>
-      <div class="main"><button type="button" class="linkish title" data-act="openHabit" data-id="${h.id}" aria-label="${esc(h.name)}, open details">${esc(h.name)}</button>
-        <div class="sub">${dotsHtml(st.w)}${progress}${goalChip(h.goalId, amt)}</div></div>
-      <button type="button" class="mini muted" data-act="restHabit" data-id="${h.id}" data-day="${k}">${l === "rest" ? "Undo rest" : "Rest"}</button>
+    const stat = l === "rest" ? "Rest day" : wp ? (wp.done >= wp.target && l !== "done" ? `${wp.done} of ${wp.target} · met` : `${wp.done} of ${wp.target} ${periodLeft(h, k, wp).replace(/^· /, "· ")}`) : "";
+    const pop = ui.pop === `h:${h.id}:${k}` ? "pop" : "";
+    return `<div class="row slim ${l === "done" ? "done" : ""}">
+      <button type="button" class="check ${l === "rest" ? "rest" : ""} ${pop}" style="${cvars(itemColor(h))}" aria-pressed="${l === "done"}" aria-label="${esc(h.name)}, ${label}${k === today() ? "" : " on " + fmtDay(k)}. Tap to change, press and hold for a rest day." data-act="toggleHabit" data-hold="restHabit" data-id="${h.id}" data-day="${k}">${ICON_CHECK}</button>
+      <div class="main"><button type="button" class="linkish title" data-act="openHabit" data-id="${h.id}" aria-label="${esc(h.name)}, open details">${emojiOf(h)}${esc(h.name)}</button></div>
+      ${stat ? `<span class="stat">${stat}</span>` : ""}
     </div>`;
   }
   function taskRow(t, opts = {}) {
     const t0 = today();
     const overdue = !t.done && t.due && t.due < t0;
-    const pr = t.priority === 1 ? '<span class="chip warn">High</span>' : "";
-    const due = t.due ? (overdue ? `<span class="chip warn">Due ${fmtDay(t.due)}</span>` : `<span>${t.due === t0 ? "Today" : fmtDay(t.due)}</span>`) : "<span>No date</span>";
-    const amt = t.goalId && t.amount ? ` +${t.amount}` : "";
-    return `<div class="row ${t.done ? "done" : ""}">
-      <button type="button" class="check" aria-pressed="${!!t.done}" aria-label="${esc(t.title)}, ${t.done ? "done" : "not done"}. Tap to change." data-act="toggleTask" data-id="${t.id}">${ICON_CHECK}</button>
-      <div class="main"><div class="title">${esc(t.title)}</div><div class="sub">${due}${pr}${goalChip(t.goalId, amt)}</div></div>
+    const when = t.due ? (overdue ? `from ${parse(t.due).toLocaleDateString(undefined, { weekday: "short" })}` : t.due === t0 ? (opts.manage ? "Today" : "") : fmtDay(t.due)) : "Anytime";
+    const hi = t.priority === 1 && !t.done ? `<span class="stat hi">High</span>` : "";
+    const pop = ui.pop === `t:${t.id}` ? "pop" : "";
+    const sub = opts.manage && t.goalId ? `<div class="sub">${goalChip(t.goalId, amtTag(t))}</div>` : "";
+    return `<div class="row slim ${t.done ? "done" : ""}">
+      <button type="button" class="check ${pop}" style="${cvars(itemColor(t))}" aria-pressed="${!!t.done}" aria-label="${esc(t.title)}, ${t.done ? "done" : "not done"}. Tap to change." data-act="toggleTask" data-id="${t.id}">${ICON_CHECK}</button>
+      <div class="main"><div class="title">${esc(t.title)}</div>${sub}</div>
+      ${hi}${when ? `<span class="stat ${overdue ? "warn" : ""}">${when}</span>` : ""}
       ${overdue && opts.overdueActions ? `<button type="button" class="mini" data-act="moveToday" data-id="${t.id}">Today</button>` : ""}
       ${opts.manage ? `<button type="button" class="mini muted" data-act="editTask" data-id="${t.id}">Edit</button>` : ""}
     </div>`;
   }
   function goalBlock(g, opts = {}) {
-    const p = goalProgress(g), pct = Math.min(100, Math.round(p / g.target * 100));
+    const p = goalProgress(g), pct = Math.min(100, Math.round(p / g.target * 100)), ps = paceStatus(g, p);
     const linked = S.habits.filter(h => h.goalId === g.id).length + S.tasks.filter(t => t.goalId === g.id).length;
-    return `<div class="goal">
-      <div class="top"><span class="title" style="font-weight:600">${esc(g.name)}</span><span class="num">${fmtNum(p)} / ${fmtNum(Number(g.target))} ${esc(g.unit)} · ${pct}%</span></div>
+    return `<div class="goal" style="${cvars(goalColor(g))}">
+      <div class="top"><span class="title" style="font-weight:700">${emojiOf(g)}${esc(g.name)}</span>${ps ? `<span class="paceword ${ps[0]}">${ps[1]}</span>` : ""}</div>
       <div class="bar" role="progressbar" aria-label="${esc(g.name)} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
-      <div class="pace">${pace(g, p) || "No deadline"}${opts.detail ? ` · ${linked} linked item${linked === 1 ? "" : "s"}` : ""}</div>
+      <div class="pace"><b style="color:var(--ink)">${ofTarget(g, p)}</b> · ${pct}%</div>
+      <div class="pace">${pace(g, p) || "No deadline, go at your own pace"}${opts.detail ? ` · ${linked} linked item${linked === 1 ? "" : "s"}` : ""}</div>
       ${opts.detail ? `<div class="btns"><button type="button" class="mini" data-act="logGoal" data-id="${g.id}">Log progress</button><button type="button" class="mini muted" data-act="editGoal" data-id="${g.id}">Edit</button><button type="button" class="mini muted" data-act="archiveGoal" data-id="${g.id}">${g.archived ? "Unarchive" : "Archive"}</button>${g.archived ? `<button type="button" class="mini danger" data-act="askDeleteGoal" data-id="${g.id}">Delete</button>` : ""}</div>${ui.form === "log:" + g.id ? logForm(g) : ""}${ui.form === "goal:" + g.id ? goalForm(g) : ""}` : ""}
     </div>`;
   }
@@ -455,7 +542,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
   function renderWelcome() {
     return `<div class="welcome card">
-      <p style="color:var(--ink);font-weight:600">Turn a big goal into what you do today.</p>
+      <p style="color:var(--ink);font-weight:700;font-family:var(--font-display);font-size:20px">🌱 Turn a big goal into what you do today.</p>
       <p>Start from an example, or set things up yourself. Habits and tasks work fine without a goal; you can link one later.</p>
       <div class="btns"><button type="button" class="btn" data-act="template">Start with "Read 24 books"</button><button type="button" class="btn ghost" data-act="blank">Start blank</button></div>
     </div>`;
@@ -472,42 +559,92 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   }
   // A count habit counts toward today's total until its period is met, or once it is done that day.
   const countsOn = (h, d) => !isCount(h) || logOf(h, d) === "done" || (() => { const wp = periodProgress(h, d); return wp.done < wp.target; })();
+  const dueHabits = d => { const past = d !== today(); return S.habits.filter(h => !h.archived && scheduled(h, d) && (past || !(h.startDay && d < h.startDay))); };
+  // What the ring counts: habits due that day (not resting, period not already met) plus tasks due today.
+  function dayCounts(d) {
+    const counted = dueHabits(d).filter(h => logOf(h, d) !== "rest" && countsOn(h, d));
+    const tasks = d === today() ? S.tasks.filter(x => !x.dropped && x.due === d) : [];
+    return { done: counted.filter(h => logOf(h, d) === "done").length + tasks.filter(x => x.done).length, total: counted.length + tasks.length };
+  }
+  function ring(done, total) {
+    const r = 24, C = 2 * Math.PI * r, f = total ? Math.min(1, done / total) : 0;
+    return `<div class="ring" role="img" aria-label="${done} of ${total} done"><svg viewBox="0 0 58 58" aria-hidden="true"><circle cx="29" cy="29" r="${r}" fill="none" stroke="var(--line)" stroke-width="6"/>${f > 0 ? `<circle cx="29" cy="29" r="${r}" fill="none" stroke="var(--accent-bright)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - f)).toFixed(1)}"/>` : ""}</svg><span aria-hidden="true">${done}/${total}</span></div>`;
+  }
+  const greeting = () => { const h = new Date().getHours(); return h < 5 ? "Hello, night owl" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"; };
+  function cheer(done, total, past) {
+    if (!total) return ["A clear day", past ? "Nothing was due that day." : "Add a task below, or enjoy the space."];
+    if (done >= total) return ["All done. Brilliant! 🎉", past ? "That day is fully logged." : "Enjoy the rest of your day."];
+    if (done === 0) return [past ? "Fill in that day" : "Fresh start", past ? "Tap what you did." : "One small step is all it takes."];
+    if (done / total >= 0.5) return ["Over halfway there", `${total - done} to go. You've got this.`];
+    return ["Nice momentum", `${done} done, ${total - done} to go.`];
+  }
+  function goalStrip(goals) {
+    return `<div class="goalstrip" role="group" aria-label="Your goals">${goals.map(g => {
+      const p = goalProgress(g), pct = Math.min(100, Math.round(p / g.target * 100)), ps = paceStatus(g, p);
+      return `<button type="button" class="gcard" style="${cvars(goalColor(g))}" data-act="focusGoal" data-id="${g.id}" aria-pressed="${ui.focus === g.id}" aria-label="${esc(g.name)}, ${pct} percent${ps ? ", " + ps[1] : ""}. Tap to show only its items.">
+        <span class="gname">${g.emoji ? esc(g.emoji) + " " : ""}${esc(g.name)}</span><span class="bar" aria-hidden="true"><i style="width:${pct}%"></i></span>
+        <span class="gfoot"><b>${pct}%</b>${ps ? `<span class="paceword ${ps[0]}">${ps[1]}</span>` : ""}</span></button>`;
+    }).join("")}</div>`;
+  }
   function renderToday() {
     const t = today(), d = viewDay(), past = d !== t;
-    const due = S.habits.filter(h => !h.archived && scheduled(h, d) && (past || !(h.startDay && d < h.startDay)));
-    const counted = due.filter(h => logOf(h, d) !== "rest" && countsOn(h, d));
-    const doneH = counted.filter(h => logOf(h, d) === "done").length;
-    const tasksToday = S.tasks.filter(x => !x.dropped && x.due === t);
-    const overdue = S.tasks.filter(x => !x.dropped && !x.done && x.due && x.due < t);
-    const noDate = S.tasks.filter(x => !x.dropped && !x.done && !x.due);
-    const doneT = tasksToday.filter(x => x.done).length;
+    const due = dueHabits(d);
+    const tasksToday = past ? [] : S.tasks.filter(x => !x.dropped && x.due === t);
     const goals = S.goals.filter(g => !g.archived);
+    const focus = ui.focus && goals.some(g => g.id === ui.focus) ? ui.focus : null;
+    const inFocus = x => !focus || x.goalId === focus;
+    const overdue = past ? [] : S.tasks.filter(x => !x.dropped && !x.done && x.due && x.due < t && inFocus(x));
+    const noDate = past ? [] : S.tasks.filter(x => !x.dropped && !x.done && !x.due);
+    const { done, total } = dayCounts(d);
+    const [big, small] = cheer(done, total, past);
     const trialDay = S.trialStart ? daysBetween(S.trialStart, t) + 1 : 1;
-    let h = trialDay <= 7 ? `<p class="hint" style="margin:0 0 10px">Trial day ${trialDay} of 7. Spot something off? Tap "Report a bug" at the top.</p>` : "";
-    h += `<div class="summary">
-      <div><b>${doneH}/${counted.length}</b><span>habits done${past ? " that day" : ""}</span></div>
-      <div><b>${doneT}/${tasksToday.length}</b><span>tasks today</span></div>
-      <div><b>${overdue.length}</b><span>to reschedule</span></div></div>`;
+    let h = trialDay <= 7 ? `<p class="hint" style="margin:0 0 10px">Trial day ${trialDay} of 7. Spot something off? Report it from More.</p>` : "";
+    h += `<div class="hello"><p><b>${big}</b>${small}</p>${ring(done, total)}</div>`;
     h += dayStrip(d);
     if (past) h += `<p class="note"><span>Logging habits for <b>${fmtDay(d)}</b>.</span><button type="button" class="mini" data-act="pickDay" data-day="${t}" style="min-height:32px;padding:4px 6px">Back to today</button></p>`;
-    h += `<h2>Habits <small>${fmtDay(d)}</small></h2>`;
-    h += due.length ? `<div class="list">${due.map(x => habitRow(x, d)).join("")}</div>` : `<div class="list"><div class="empty">No habits scheduled ${past ? "that day" : "today"}. Add one in Habits.</div></div>`;
+    if (goals.length && !past) h += goalStrip(goals);
+    if (focus) h += `<p class="focusbar"><span>Showing <b>${esc(goalById(focus).name)}</b> only</span><button type="button" class="mini" data-act="focusGoal" data-id="${focus}">Show all</button></p>`;
+    // A habit is finished for the day when it's done, resting, or its count for the period is already met.
+    const finished = x => { const l = logOf(x, d); return l === "done" || l === "rest" || !countsOn(x, d); };
+    const goalOf = x => x.goalId && goals.some(g => g.id === x.goalId) ? x.goalId : null;
+    const items = [...due.map(x => ({ x, row: () => habitRow(x, d), done: finished(x) })),
+      ...tasksToday.map(x => ({ x, row: () => taskRow(x), done: !!x.done })),
+      ...noDate.map(x => ({ x, row: () => taskRow(x), done: false }))].filter(i => inFocus(i.x));
+    const open = items.filter(i => !i.done), fin = items.filter(i => i.done);
+    let groups = 0;
+    for (const gid of [...goals.map(g => g.id), null]) {
+      const grp = open.filter(i => goalOf(i.x) === gid); if (!grp.length) continue;
+      const g = gid && goalById(gid);
+      h += g ? `<h2 class="ghead" style="${cvars(goalColor(g))}"><i></i>${g.emoji ? `<span class="em">${esc(g.emoji)}</span>` : ""}${esc(g.name)}</h2>` : `<h2 class="ghead">${groups ? "Everything else" : past ? "Habits" : "Today"}</h2>`;
+      h += `<div class="list">${grp.map(i => i.row()).join("")}</div>`;
+      groups++;
+    }
+    if (!open.length) h += `<div class="list" style="margin-top:16px"><div class="empty">${items.length ? "Everything's ticked off. Lovely work. 🌟" : past ? "Nothing was scheduled that day." : "Nothing planned yet. Add a task below, or a habit in Habits."}</div></div>`;
+    if (fin.length) {
+      h += `<button type="button" class="fold" data-act="toggleDone" aria-expanded="${!!ui.showDone}">Done (${fin.length}) ${ui.showDone ? "⌃" : "›"}</button>`;
+      if (ui.showDone) h += `<div class="list">${fin.map(i => i.row()).join("")}</div>`;
+    }
+    if (!past && open.some(i => i.x.name) && !Object.values(S.logs).some(l => Object.values(l).includes("rest"))) h += `<p class="tip">Tip: press and hold a habit's circle to take a rest day. Rest never counts against you.</p>`;
     if (past) return h + confirmBox();
-    h += `<h2>Tasks <small>${tasksToday.length} today</small></h2>`;
-    h += tasksToday.length ? `<div class="list">${tasksToday.map(x => taskRow(x)).join("")}</div>` : `<div class="list"><div class="empty">Nothing due today.</div></div>`;
     h += quickAdd();
     if (overdue.length) {
-      h += `<h2>From earlier <small>${overdue.length}</small></h2><div class="list">${overdue.map(x => taskRow(x, { overdueActions: true })).join("")}</div>
-        <div class="btns add"><button type="button" class="mini" data-act="moveAllToday">Move all to today</button><button type="button" class="mini muted" data-act="askDropOverdue">Drop all</button></div>`;
+      h += `<h2 class="ghead">Carried over</h2><div class="list">${overdue.map(x => taskRow(x, { overdueActions: true })).join("")}</div>
+        <div class="btns add"><button type="button" class="mini" data-act="moveAllToday">Move all to today</button><button type="button" class="mini muted" data-act="askDropOverdue">Let them go</button></div>`;
     }
-    if (noDate.length) h += `<h2>Anytime <small>${noDate.length}</small></h2><div class="list">${noDate.map(x => taskRow(x)).join("")}</div>`;
-    if (goals.length) h += `<h2>Goals</h2><div class="list">${goals.map(g => goalBlock(g)).join("")}</div>`;
     return h + confirmBox();
   }
   function quickAdd() {
-    return `<form class="add" data-form="quick" style="display:flex;gap:8px"><label for="qa" style="flex:1"><span class="sr" hidden>Quick add task</span><input id="qa" name="title" placeholder="Add a task for today" maxlength="140" autocomplete="off"></label><button class="btn" type="submit" aria-label="Add task">Add</button></form>`;
+    return `<form class="add" data-form="quick" style="display:flex;gap:8px;margin-top:16px"><label for="qa" style="flex:1"><span class="sr" hidden>Quick add task</span><input id="qa" name="title" placeholder="Add a task for today" maxlength="140" autocomplete="off"></label><button class="btn" type="submit" aria-label="Add task">Add</button></form>`;
   }
 
+  function lookPicker(x, inherit) {
+    const cur = COLORS[x.color] ? x.color : "";
+    const sw = (inherit ? [`<button type="button" class="none" role="radio" aria-checked="${!cur}" aria-label="Same as its goal" data-act="pickColor" data-id="">Auto</button>`] : [])
+      .concat(COLOR_KEYS.map(k => `<button type="button" role="radio" aria-checked="${cur === k}" aria-label="${k}" style="${cvars(k)}" data-act="pickColor" data-id="${k}"></button>`));
+    return `<input type="hidden" name="color" value="${cur}">
+      <div><span class="hint" style="font-weight:600">Colour</span><div class="swatches" role="radiogroup" aria-label="Colour" style="margin-top:6px">${sw.join("")}</div></div>
+      <div><span class="hint" style="font-weight:600">Emoji (optional)</span><div class="emojis" role="radiogroup" aria-label="Emoji" style="margin-top:6px">${EMOJIS.map(e => `<button type="button" role="radio" aria-checked="${x.emoji === e}" data-act="pickEmoji" data-id="${e}">${e}</button>`).join("")}<input name="emoji" aria-label="Or type an emoji" maxlength="16" value="${esc(x.emoji)}" style="width:72px;min-height:40px;padding:6px 10px;font-size:20px;text-align:center"></div></div>`;
+  }
   const formBtns = (label, del) => `<div class="btns"><button class="btn" type="submit">${label}</button><button class="btn ghost" type="button" data-act="closeForm">Cancel</button>${del || ""}</div>`;
   function goalForm(g) {
     const e = !!g; g = g || {};
@@ -516,11 +653,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       <div class="fields"><label for="g-target">Target<input id="g-target" name="target" type="number" inputmode="decimal" min="0.1" step="any" required placeholder="24" value="${esc(g.target)}"></label>
       <label for="g-unit">Unit<input id="g-unit" name="unit" maxlength="20" placeholder="books" value="${esc(g.unit)}"></label></div>
       <label for="g-deadline">Deadline (optional)<input id="g-deadline" name="deadline" type="date" value="${esc(g.deadline)}"></label>
+      ${lookPicker(e ? { color: g.color, emoji: g.emoji } : { color: COLOR_KEYS[S.goals.length % COLOR_KEYS.length] }, false)}
       ${formBtns(e ? "Save goal" : "Create goal", e ? `<button type="button" class="btn ghost" style="color:var(--warn)" data-act="askDeleteGoal" data-id="${g.id}">Delete</button>` : "")}</form>`;
   }
   function renderGoals() {
     const goals = S.goals.filter(g => !g.archived), arch = S.goals.filter(g => g.archived);
-    let h = goals.length ? `<div class="list">${goals.map(g => goalBlock(g, { detail: true })).join("")}</div>` : `<div class="list"><div class="empty">No goals yet. A goal has a number to reach, like 24 books or 100 km.</div></div>`;
+    let h = goals.length ? `<div class="list">${goals.map(g => goalBlock(g, { detail: true })).join("")}</div>` : `<div class="list"><div class="empty">No goals yet. Pick something you would love to reach, like 24 books or 100 km. 🎯</div></div>`;
     h += confirmBox();
     h += ui.form === "goal" ? goalForm(null) : `<div class="btns add"><button type="button" class="btn" data-act="openForm" data-form="goal">New goal</button></div>`;
     if (arch.length) h += archivedSection(arch.length, () => `<div class="list">${arch.map(g => goalBlock(g, { detail: true })).join("")}</div>`);
@@ -543,6 +681,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       <p class="hint" style="margin-top:6px">For example 3× every 10 days. The count starts again every 10 days, from the day you save${e && isCount(x) ? " (or keeps its current timing if you don't change the days)" : ""}.</p></div>
       <div class="fields"><label for="h-goal">Counts toward<select id="h-goal" name="goalId">${goalOptions(x.goalId || "")}</select></label>
       <label for="h-amt">Amount per check-in<input id="h-amt" name="amount" type="number" inputmode="decimal" step="any" min="0" value="${esc(x.goalId || !e ? x.amount || 1 : 1)}"></label></div>
+      ${lookPicker(x, true)}
       ${e ? `<p class="hint">Changing the goal or amount also changes what past check-ins added to goals. Check-in history stays.</p>` : ""}
       ${formBtns(e ? "Save habit" : "Create habit")}</form>`;
   }
@@ -553,11 +692,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       const st = habitStats(x);
       const pp = isCount(x) && periodProgress(x, today());
       const prog = pp ? `<span>${pp.done} of ${pp.target} ${periodLeft(x, today(), pp)}</span>` : `${dotsHtml(st.w)}<span>${st.done} of ${st.counted} last 7</span>`;
-      return `<div class="row"><div class="main"><button type="button" class="linkish title" data-act="openHabit" data-id="${x.id}">${esc(x.name)}</button><div class="sub"><span>${schedText(x)}</span>${prog}${goalChip(x.goalId, x.goalId ? ` +${x.amount}` : "")}</div></div>
+      return `<div class="row" style="${cvars(itemColor(x))}"><span class="ghead" style="margin:0" aria-hidden="true"><i></i></span><div class="main"><button type="button" class="linkish title" data-act="openHabit" data-id="${x.id}">${emojiOf(x)}${esc(x.name)}</button><div class="sub"><span>${schedText(x)}</span>${prog}${goalChip(x.goalId, amtTag(x))}</div></div>
         <button type="button" class="mini" data-act="openHabit" data-id="${x.id}" aria-label="Open ${esc(x.name)}">Open</button></div>`;
     };
     const hs = S.habits.filter(x => !x.archived), arch = S.habits.filter(x => x.archived);
-    let h = hs.length ? `<div class="list">${hs.map(row).join("")}</div>` : `<div class="list"><div class="empty">No habits yet.</div></div>`;
+    let h = hs.length ? `<div class="list">${hs.map(row).join("")}</div>` : `<div class="list"><div class="empty">No habits yet. Start tiny: two minutes a day counts. 🌱</div></div>`;
     h += confirmBox();
     h += ui.form === "habit" ? habitForm(null) : `<div class="btns add"><button type="button" class="btn" data-act="openForm" data-form="habit">New habit</button></div>`;
     if (arch.length) h += archivedSection(arch.length, () => `<div class="list">${arch.map(row).join("")}</div>`);
@@ -577,7 +716,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       g += `<button type="button" class="${cls} ${k === t ? "today" : ""}" data-act="cycleDay" data-id="${h.id}" data-day="${k}" ${fut ? "disabled" : ""} aria-label="${fmtDay(k)}, ${state}${fut ? "" : ". Tap to change."}">${parse(k).getDate()}</button>`;
     }
     const prev = dk(new Date(y, m - 2, 1, 12)).slice(0, 7), next = dk(new Date(y, m, 1, 12)).slice(0, 7);
-    return `<div class="card"><div class="calhead"><button type="button" class="mini" data-act="calMonth" data-id="${prev}" aria-label="Previous month">‹ Prev</button><b>${title}</b><button type="button" class="mini" data-act="calMonth" data-id="${next}" ${next > t.slice(0, 7) ? "disabled style=\"visibility:hidden\"" : ""} aria-label="Next month">Next ›</button></div>
+    return `<div class="card" style="${cvars(itemColor(h))}"><div class="calhead"><button type="button" class="mini" data-act="calMonth" data-id="${prev}" aria-label="Previous month">‹ Prev</button><b>${title}</b><button type="button" class="mini" data-act="calMonth" data-id="${next}" ${next > t.slice(0, 7) ? "disabled style=\"visibility:hidden\"" : ""} aria-label="Next month">Next ›</button></div>
       <div class="cal">${g}</div><p class="hint">Tap a past day to cycle: done, rest, not done.</p></div>`;
   }
   function renderHabitDetail(x) {
@@ -586,8 +725,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     const rate = wk ? `${tot.done30} time${tot.done30 === 1 ? "" : "s"} in the last 30 days (target about ${Math.round(x.times * 30 / x.every)})${isCalWeek(x) ? "" : `. This period runs ${fmtDay(pp.start)} to ${fmtDay(pp.end)}`}`
       : tot.counted30 ? `${tot.done30} of ${tot.counted30} scheduled days in the last 30 (${Math.round(tot.done30 / tot.counted30 * 100)}%)` : "No scheduled days yet in the last 30";
     let h = `<div class="btns" style="margin-top:4px"><button type="button" class="mini" data-act="closeHabit" style="padding-left:0">‹ All habits</button></div>
-      <div class="card"><div><div class="title" style="font-weight:700;font-size:18px">${esc(x.name)}</div>
-      <div class="sub" style="font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px"><span>${schedText(x)}</span>${goalChip(x.goalId, x.goalId ? ` +${x.amount}` : "")}${x.archived ? '<span class="chip rest">Archived</span>' : ""}</div></div>
+      <div class="card" style="${cvars(itemColor(x))};border-top:4px solid var(--c, var(--accent-bright))"><div><div class="title" style="font-weight:700;font-size:20px;font-family:var(--font-display)">${emojiOf(x)}${esc(x.name)}</div>
+      <div class="sub" style="font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px"><span>${schedText(x)}</span>${goalChip(x.goalId, amtTag(x))}${x.archived ? '<span class="chip rest">Archived</span>' : ""}</div></div>
       <div class="summary four" style="margin:0">
         <div><b>${st.run}</b><span>${unit} in a row now</span></div>
         <div><b>${st.best}</b><span>best run (${unit})</span></div>
@@ -615,7 +754,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   function renderTasks() {
     const open = S.tasks.filter(t => !t.dropped && !t.done).sort((a, b) => (a.due || "9999") < (b.due || "9999") ? -1 : (a.due || "9999") > (b.due || "9999") ? 1 : a.priority - b.priority);
     const done = S.tasks.filter(t => !t.dropped && t.done).slice(-10).reverse();
-    let h = open.length ? `<div class="list">${open.map(t => taskRow(t, { manage: true, overdueActions: true })).join("")}</div>` : `<div class="list"><div class="empty">No open tasks.</div></div>`;
+    let h = open.length ? `<div class="list">${open.map(t => taskRow(t, { manage: true, overdueActions: true })).join("")}</div>` : `<div class="list"><div class="empty">All clear. Nothing on your list. ✨</div></div>`;
     h += confirmBox();
     const editing = ui.form?.startsWith("task:") && S.tasks.find(t => "task:" + t.id === ui.form);
     h += editing ? taskForm(editing) : ui.form === "task" ? taskForm(null) : `<div class="btns add"><button type="button" class="btn" data-act="openForm" data-form="task">New task</button></div>`;
@@ -644,6 +783,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       <div class="btns"><button type="button" class="btn" data-act="askImport">Restore</button></div>
     </div>${confirmBox()}
     <h2>Start over</h2><div class="card"><p class="hint">Deletes all goals, habits, tasks and history. Export first if you want a copy.</p><div class="btns"><button type="button" class="btn ghost" data-act="askReset" style="color:var(--warn)">Delete everything</button></div></div>
+    <h2>About</h2><div class="card"><p class="hint">Ascend web ${VERSION}. Free, private, and your data never leaves this phone. The native iPhone app comes later.</p></div>
     <h2>Add to Home Screen</h2><div class="card"><p class="hint">In Safari, tap Share, then "Add to Home Screen". From then on open Ascend from that icon: the icon and Safari keep separate data.</p></div>`;
   }
 
@@ -661,22 +801,23 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       <div class="btns"><button class="btn" type="submit">Send report</button><button class="btn ghost" type="button" data-act="closeReport">Cancel</button></div></form>`;
   }
 
-  const TITLES = { today: ["Today", "Ascend"], goals: ["Long term", "Goals"], habits: ["Every week", "Habits"], tasks: ["To do", "Tasks"], more: ["Settings", "More"] };
+  const TITLES = { today: ["Today", "Ascend"], goals: ["The big picture", "Goals"], habits: ["Small steps", "Habits"], tasks: ["To do", "Tasks"], more: ["Settings", "More"] };
   function render() {
     if (!S) return;
     const [eb, hd] = TITLES[tab];
     document.getElementById("eyebrow").textContent = tab === "today" ? parse(today()).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }) : eb;
-    document.getElementById("heading").textContent = hd;
+    document.getElementById("heading").textContent = tab === "today" && (hasData() || S.started) ? greeting() : hd;
     document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false"));
     if (!hasData() && tab === "today" && !S.started) { view.innerHTML = renderWelcome(); return; }
     view.innerHTML = { today: renderToday, goals: renderGoals, habits: renderHabits, tasks: renderTasks, more: renderMore }[tab]();
+    ui.pop = null;
   }
 
   // ---------- Actions ----------
   function applyTemplate() {
-    const t = today(), g = { id: uid(), name: "Read 24 books", target: 24, unit: "books", deadline: `${parse(t).getFullYear()}-12-31`, createdDay: t };
+    const t = today(), g = { id: uid(), name: "Read 24 books", emoji: "📚", color: "green", target: 24, unit: "books", deadline: `${parse(t).getFullYear()}-12-31`, createdDay: t };
     S.goals.push(g);
-    S.habits.push({ id: uid(), name: "Read for 20 minutes", days: [], goalId: null, amount: 0, startDay: t });
+    S.habits.push({ id: uid(), name: "Read for 20 minutes", emoji: "📖", days: [], goalId: null, amount: 0, startDay: t });
     S.tasks.push({ id: uid(), title: "Finish current book", due: addDays(t, 6), priority: 2, goalId: g.id, amount: 1, done: false });
     S.tasks.push({ id: uid(), title: "Pick the next book", due: t, priority: 3, goalId: null, amount: 0, done: false });
     S.started = true;
@@ -691,11 +832,67 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     if (v && h.startDay && k < h.startDay) h.startDay = k;
     save();
   }
+  // ---------- Feedback: toast with Undo, small celebrations ----------
+  let toastTimer = null;
+  function toast(html, undo) {
+    document.querySelector(".toast")?.remove(); clearTimeout(toastTimer);
+    const el = document.createElement("div");
+    el.className = "toast"; el.setAttribute("role", "status");
+    el.innerHTML = `<span>${html}</span>${undo ? '<button type="button">Undo</button>' : ""}`;
+    if (undo) el.querySelector("button").addEventListener("click", ev => { ev.stopPropagation(); undo(); el.remove(); render(); });
+    document.body.appendChild(el);
+    toastTimer = setTimeout(() => el.remove(), 4500);
+  }
+  function confetti() {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const box = document.createElement("div"); box.className = "confetti"; box.setAttribute("aria-hidden", "true");
+    const cols = COLOR_KEYS.map(k => COLORS[k][0]);
+    for (let i = 0; i < 36; i++) { const c = document.createElement("i"); c.style.left = Math.random() * 100 + "%"; c.style.background = cols[i % cols.length]; c.style.animationDelay = Math.random() * 0.4 + "s"; c.style.transform = `rotate(${Math.random() * 180}deg)`; box.appendChild(c); }
+    document.body.appendChild(box); setTimeout(() => box.remove(), 2400);
+  }
+  const CHEERS = ["Nice one!", "Done. Keep it rolling.", "Another step up.", "That's the way.", "Small wins add up.", "Lovely. On to the next."];
+  // After something is checked off: the biggest bit of good news wins.
+  function celebrate(x, before, day, undo) {
+    const g = x.goalId && goalById(x.goalId), after = dayCounts(day);
+    if (g && Number(x.amount)) {
+      const pct = pctOf(g), mark = [100, 75, 50, 25].find(m => before.pct < m && pct >= m);
+      if (mark === 100) { confetti(); return toast(`🎉 <b>${esc(g.name)}</b>: target reached!`, undo); }
+      if (after.total && after.done >= after.total && before.done < before.total) { confetti(); return toast(`All done for ${day === today() ? "today" : fmtDay(day)}. Brilliant! 🎉`, undo); }
+      if (mark) return toast(`${mark === 50 ? "Halfway" : mark + "%"} to <b>${esc(g.name)}</b>! 🙌`, undo);
+      return toast(`+${fmtAmt(Number(x.amount), g.unit)} · ${esc(g.name)} now ${ofTarget(g, goalProgress(g))}`, undo);
+    }
+    if (after.total && after.done >= after.total && before.done < before.total) { confetti(); return toast(`All done for ${day === today() ? "today" : fmtDay(day)}. Brilliant! 🎉`, undo); }
+    toast(CHEERS[Math.floor(Math.random() * CHEERS.length)], undo);
+  }
+  const beforeOf = (x, day) => { const g = x.goalId && goalById(x.goalId); return { pct: g ? pctOf(g) : 0, ...dayCounts(day) }; };
+  function pickIn(form, name, val, el) {
+    form.querySelectorAll(`[data-act="${el.dataset.act}"]`).forEach(b => b.setAttribute("aria-checked", String(b === el)));
+    const inp = form.querySelector(`input[name="${name}"]`); if (inp) inp.value = val;
+  }
+
   const actions = {
     template() { applyTemplate(); },
     blank() { S.started = true; save(); tab = "goals"; ui.form = "goal"; },
-    toggleHabit(id, el) { setLog(id, el.dataset.day, v => v === "done" ? null : "done"); },
-    restHabit(id, el) { setLog(id, el.dataset.day, v => v === "rest" ? null : "rest"); },
+    toggleHabit(id, el) {
+      const h = S.habits.find(x => x.id === id), k = el.dataset.day; if (!h) return;
+      const prev = logOf(h, k), start = h.startDay, before = beforeOf(h, k);
+      setLog(id, k, v => v === "done" ? null : "done");
+      const now = logOf(h, k); if (now === prev) return;
+      const undo = () => { setLog(id, k, () => prev || null); h.startDay = start; save(); };
+      if (now === "done") { ui.pop = `h:${id}:${k}`; celebrate(h, before, k, undo); }
+      else toast(`Unticked ${esc(h.name)}`, undo);
+    },
+    restHabit(id, el) {
+      const h = S.habits.find(x => x.id === id), k = el.dataset.day; if (!h) return;
+      const prev = logOf(h, k), start = h.startDay;
+      setLog(id, k, v => v === "rest" ? null : "rest");
+      const undo = () => { setLog(id, k, () => prev || null); h.startDay = start; save(); };
+      toast(logOf(h, k) === "rest" ? `Rest day for ${esc(h.name)}. Rest is part of the plan. 🌿` : `Rest day removed`, undo);
+    },
+    focusGoal(id) { ui.focus = ui.focus === id ? null : id; },
+    toggleDone() { ui.showDone = !ui.showDone; },
+    pickColor(id, el) { pickIn(el.closest("form"), "color", id, el); return Promise.resolve(); },
+    pickEmoji(id, el) { pickIn(el.closest("form"), "emoji", id, el); return Promise.resolve(); },
     cycleDay(id, el) { setLog(id, el.dataset.day, v => v === "done" ? "rest" : v === "rest" ? null : "done"); },
     pickDay(_, el) { ui.day = el.dataset.day === today() ? null : el.dataset.day; },
     openHabit(id) { tab = "habits"; ui.detail = id; ui.form = null; ui.confirm = null; ui.calMonth = null; window.scrollTo(0, 0); },
@@ -707,17 +904,23 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     archiveHabit(id) { const x = S.habits.find(h => h.id === id); if (x) { x.archived = !x.archived; save(); } },
     archiveGoal(id) { const g = goalById(id); if (g) { g.archived = !g.archived; if (ui.form === "goal:" + id) ui.form = null; save(); } },
     toggleArchived() { ui.showArchived = !ui.showArchived; },
-    toggleTask(id) { const x = S.tasks.find(t => t.id === id); if (!x) return; x.done = !x.done; x.doneOn = x.done ? today() : null; save(); },
+    toggleTask(id) {
+      const x = S.tasks.find(t => t.id === id); if (!x) return;
+      const was = { done: x.done, doneOn: x.doneOn }, before = beforeOf(x, today());
+      x.done = !x.done; x.doneOn = x.done ? today() : null; save();
+      const undo = () => { Object.assign(x, was); save(); };
+      if (x.done) { ui.pop = `t:${id}`; celebrate(x, before, today(), undo); } else toast(`Unticked ${esc(x.title)}`, undo);
+    },
     moveToday(id) { const x = S.tasks.find(t => t.id === id); if (x) { x.due = today(); save(); } },
     moveAllToday() { const t = today(); S.tasks.forEach(x => { if (!x.dropped && !x.done && x.due && x.due < t) x.due = t; }); save(); },
-    askDropOverdue() { ui.confirm = { text: "Drop all tasks from earlier days? They'll disappear from your lists.", yes: "Drop them", run: () => { const t = today(); S.tasks.forEach(x => { if (!x.done && x.due && x.due < t) x.dropped = true; }); save(); } }; },
+    askDropOverdue() { ui.confirm = { text: "Let go of all carried-over tasks? They'll leave your lists. Sometimes letting go is the right call.", yes: "Let them go", run: () => { const t = today(); S.tasks.forEach(x => { if (!x.done && x.due && x.due < t) x.dropped = true; }); save(); } }; },
     askDeleteTask(id) { const x = S.tasks.find(t => t.id === id); ui.confirm = { text: `Delete "${x?.title}"?${x?.goalId && x?.done ? " Its goal progress will go down." : ""}`, yes: "Delete", run: () => { S.tasks = S.tasks.filter(t => t.id !== id); ui.form = null; save(); } }; },
     askDeleteHabit(id) { const x = S.habits.find(h => h.id === id); ui.confirm = { text: `Delete "${x?.name}" and its check-in history?${x?.goalId ? " Progress it added to its goal will be removed." : ""} To keep the history, archive it instead.`, yes: "Delete habit", run: () => { S.habits = S.habits.filter(h => h.id !== id); delete S.logs[id]; ui.detail = null; ui.form = null; save(); } }; },
     askDeleteGoal(id) { const g = goalById(id); ui.confirm = { text: `Delete goal "${g?.name}"? Linked habits and tasks stay; they just stop counting toward it. To keep it, archive it instead.`, yes: "Delete goal", run: () => { ui.form = null; S.goals = S.goals.filter(x => x.id !== id); S.entries = S.entries.filter(e => e.goalId !== id); S.habits.forEach(h => { if (h.goalId === id) h.goalId = null; }); S.tasks.forEach(t => { if (t.goalId === id) t.goalId = null; }); save(); } }; },
     logGoal(id) { ui.form = "log:" + id; },
     openForm(_, el) { ui.form = el.dataset.form; draftDays = []; },
     closeForm() { ui.form = null; },
-    toggleDay(_, el) { const d = Number(el.dataset.day); draftDays = draftDays.includes(d) ? draftDays.filter(x => x !== d) : [...draftDays, d]; },
+    toggleDay(_, el) { const d = Number(el.dataset.day); draftDays = draftDays.includes(d) ? draftDays.filter(x => x !== d) : [...draftDays, d]; el.setAttribute("aria-pressed", String(draftDays.includes(d))); return Promise.resolve(); },
     confirmYes() { const c = ui.confirm; ui.confirm = null; c?.run(); },
     confirmNo() { ui.confirm = null; },
     showExport() { ui.exportShown = !ui.exportShown; ui.msg = ""; },
@@ -751,6 +954,16 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     render();
     if (ui.scroll) { ui.scroll = false; const f = view.querySelector("form[data-autofocus]"); f?.scrollIntoView({ block: "center" }); f?.querySelector("input")?.focus({ preventScroll: true }); }
   });
+  // Press and hold a habit's circle for a rest day. The click that follows the hold is ignored.
+  let holdTimer = null, held = false;
+  document.addEventListener("pointerdown", e => {
+    const el = e.target.closest("[data-hold]"); if (!el) return;
+    held = false; clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => { held = true; actions[el.dataset.hold](el.dataset.id, el); render(); }, 550);
+  });
+  ["pointerup", "pointercancel", "pointerleave", "scroll"].forEach(t => document.addEventListener(t, () => clearTimeout(holdTimer), true));
+  document.addEventListener("contextmenu", e => { if (e.target.closest("[data-hold]")) e.preventDefault(); });
+  document.addEventListener("click", e => { if (held && e.target.closest("[data-hold]")) { held = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
   document.addEventListener("submit", e => {
     e.preventDefault();
     const f = e.target, fd = new FormData(f), kind = f.dataset.form;
@@ -772,12 +985,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     if (kind === "quick") { const title = String(fd.get("title") || "").trim(); if (!title) return; S.tasks.push({ id: uid(), title, due: today(), priority: 2, goalId: null, amount: 0, done: false }); S.started = true; save(); render(); document.getElementById("qa")?.focus(); return; }
     // Edit forms carry the item's id; new-item forms leave it empty.
     const editId = f.dataset.id;
+    const look = () => ({ color: COLORS[fd.get("color")] ? String(fd.get("color")) : null, emoji: firstGrapheme(fd.get("emoji")) || null });
     const upsert = (list, fields, make) => { const x = editId && list.find(i => i.id === editId); if (x) Object.assign(x, fields); else if (!editId) list.push({ ...make(), ...fields }); };
-    if (kind === "goal") { const target = num(fd.get("target"), 0); const name = String(fd.get("name")).trim(); if (!(target > 0) || !name) return; upsert(S.goals, { name, target, unit: String(fd.get("unit") || "").trim(), deadline: fd.get("deadline") || null }, () => ({ id: uid(), createdDay: today() })); }
+    if (kind === "goal") { const target = num(fd.get("target"), 0); const name = String(fd.get("name")).trim(); if (!(target > 0) || !name) return; upsert(S.goals, { ...look(), name, target, unit: String(fd.get("unit") || "").trim(), deadline: fd.get("deadline") || null }, () => ({ id: uid(), createdDay: today() })); }
     if (kind === "habit") { const gid = fd.get("goalId") || null, name = String(fd.get("name")).trim(); if (!name) return; const every = Math.max(2, Math.min(365, Math.round(Number(fd.get("every")) || 7))), times = Math.max(0, Math.min(every, Math.round(Number(fd.get("times")) || 0)));
       // Keep a count habit's period timing unless its length changes; otherwise periods start today.
       const old = editId && S.habits.find(i => i.id === editId), anchor = times ? (old && isCount(old) && Number(old.every) === every ? old.anchor : today()) : null;
-      upsert(S.habits, { name, days: times ? [] : draftDays.slice(), times, every: times ? every : null, anchor, goalId: gid, amount: gid ? num(fd.get("amount"), 1) : 0 }, () => ({ id: uid(), startDay: today() })); }
+      upsert(S.habits, { ...look(), name, days: times ? [] : draftDays.slice(), times, every: times ? every : null, anchor, goalId: gid, amount: gid ? num(fd.get("amount"), 1) : 0 }, () => ({ id: uid(), startDay: today() })); }
     if (kind === "task") { const gid = fd.get("goalId") || null, title = String(fd.get("title")).trim(); if (!title) return; upsert(S.tasks, { title, due: fd.get("due") || null, priority: Number(fd.get("priority")) || 2, goalId: gid, amount: gid ? num(fd.get("amount"), 1) : 0 }, () => ({ id: uid(), done: false })); }
     if (kind === "log") { const amount = Number(fd.get("amount")); if (!Number.isFinite(amount) || amount === 0) return; S.entries.push({ id: uid(), goalId: f.dataset.id, day: today(), amount, note: String(fd.get("note") || "").trim() }); }
     S.started = true; ui.form = null; save(); render();
@@ -801,7 +1015,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   }
   S = readLocal() || EMPTY();
   setSync(window.claude?.use ? "Connecting…" : "Saved on this device");
-  document.getElementById("ver").textContent = VERSION;
   render();
   connect().then(() => { markOpen(); render(); });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) markOpen(); });
