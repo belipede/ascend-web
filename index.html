@@ -74,7 +74,7 @@ h2 small { font-family: var(--font-body); font-size: 13px; color: var(--muted); 
 .row .title { font-weight: 600; overflow-wrap: anywhere; }
 .row .sub { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; font-variant-numeric: tabular-nums; }
 .row.done .title { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
-.check { --c: var(--accent-bright); --ci: #fff; flex: none; width: 44px; height: 44px; border-radius: 50%; border: 2.5px solid color-mix(in srgb, var(--c) 55%, var(--line)); background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--ci); -webkit-touch-callout: none; user-select: none; }
+.check { --c: var(--accent-bright); --ci: #fff; flex: none; width: 44px; height: 44px; border-radius: 50%; border: 2.5px solid color-mix(in srgb, var(--c) 55%, var(--line)); background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--ci); -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .check svg { width: 20px; height: 20px; opacity: 0; }
 .check[aria-pressed="true"] { background: var(--c); border-color: var(--c); }
 .check[aria-pressed="true"] svg { opacity: 1; }
@@ -192,6 +192,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .toast { position: fixed; left: 50%; bottom: calc(146px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; width: min(528px, calc(100% - 32px)); display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 16px; border-radius: 16px; background: var(--ink); color: var(--bg); box-shadow: 0 8px 28px rgba(0,0,0,.18); font-size: 15px; }
 .toast span { flex: 1; min-width: 0; }
 .toast button { font: inherit; font-weight: 700; color: var(--accent-bright); background: none; border: 0; padding: 8px 10px; min-height: 40px; cursor: pointer; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .toast button { color: #0d6b4f; } }
+:root[data-theme="dark"] .toast button { color: #0d6b4f; }
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 30; overflow: hidden; }
 .confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; opacity: .95; }
 @media (prefers-reduced-motion: no-preference) {
@@ -219,7 +221,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
 .srow:first-child { border-top: 0; }
 .srow > .row { border-top: 0; background: var(--surface); position: relative; z-index: 1; }
 .srow .acts { position: absolute; inset: 0 0 0 auto; display: flex; z-index: 0; }
-.srow .acts button { font: inherit; font-size: 13px; font-weight: 700; border: 0; width: 76px; color: #fff; cursor: pointer; }
+.srow .acts button { font: inherit; font-size: 13px; font-weight: 700; border: 0; width: 76px; color: var(--accent-ink); cursor: pointer; }
 .srow .acts .a1 { background: var(--rest); }
 .srow .acts .a2 { background: var(--accent); }
 .seg { display: inline-flex; margin-top: 14px; padding: 3px; border-radius: 12px; background: color-mix(in srgb, var(--line) 70%, transparent); gap: 2px; }
@@ -595,7 +597,8 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     const dayMonth = (d, mon) => { const m = MONTHS.indexOf(mon.slice(0, 3).toLowerCase()), y = parse(t).getFullYear(); if (m < 0) return false; let k = onDay(y, m, Number(d)); if (k && k < t) k = onDay(y + 1, m, Number(d)); if (!k) return false; due = k; return true; };
     take(/\s#([^\s#]+)/gi, m => { const q = m[1].toLowerCase(); const g = S.goals.filter(x => !x.archived).find(x => x.emoji === m[1] || x.name.toLowerCase().replace(/[^a-z0-9]/g, "").includes(q.replace(/[^a-z0-9]/g, "") || "\u0000")); if (!g) return false; goalId = g.id; return true; });
     take(/\s!(high|low|h|l)?(?=\s)/gi, m => { priority = /^l/i.test(m[1] || "") ? 3 : 1; return true; });
-    take(/\s\+(\d+(?:\.\d+)?)(?=\s)/g, m => { amount = Number(m[1]); return true; });
+    // "+2" is the amount added to the linked goal, so without a goal it stays in the title.
+    take(/\s\+(\d+(?:\.\d+)?)(?=\s)/g, m => { if (!goalId) return false; amount = Number(m[1]); return true; });
     take(/\s(?:in the |this )?(morning|afternoon|evening|tonight)(?=\s)/i, m => { const w = m[1].toLowerCase(); part = w === "tonight" ? "evening" : w; if (w === "tonight") due = t; return true; });
     take(/\s(?:on |by |due )?(?:today|tdy)(?=\s)/i, () => { due = t; return true; });
     take(/\s(?:on |by |due )?(?:tomorrow|tmrw|tmr|tomorow)(?=\s)/i, () => { due = addDays(t, 1); return true; });
