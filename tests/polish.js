@@ -46,6 +46,27 @@ const stored = p => p.evaluate(() => JSON.parse(localStorage.getItem('ascend-pro
   const more = await p.innerText('#view');
   ok(/How often you open Ascend/.test(more) && !/Your trial/.test(more), 'More: trial section renamed');
   ok(/Google Fonts/.test(more), 'About is honest about the font request');
+  // 14-day check
+  ok(/Your 14-day check/.test(more) && /Day 1 of 14/.test(more), '14-day check started: ' + (more.match(/Day \d+ of 14/) || [''])[0]);
+  ok(/Opened Ascend: 1 of 10/.test(more), 'counts today as an open day');
+  await p.evaluate(() => { const u = JSON.parse(localStorage.getItem('ascend-ui-v1')); const d = new Date(); d.setDate(d.getDate() - 20); u.checkStart = d.toISOString().slice(0, 10); localStorage.setItem('ascend-ui-v1', JSON.stringify(u)); });
+  await p.reload(); await p.waitForTimeout(400);
+  ok(/14-day check is finished/.test(await p.innerText('#view')), 'Today announces the finished check once');
+  await p.click('[data-act="seenCheck"]'); await p.waitForTimeout(150);
+  ok(!/14-day check is finished/.test(await p.innerText('#view')), 'OK dismisses it');
+  // Shorter New habit form
+  await p.click('nav.tabs button[data-tab="habits"]'); await p.waitForTimeout(150);
+  await p.click('[data-act="openForm"][data-form="habit"]'); await p.waitForTimeout(250);
+  const vis = await p.$$eval('.sheet form input:not([type=hidden]), .sheet form select, .sheet form button[data-act]:not([data-act=closeForm])', els => els.filter(e => e.checkVisibility()).length);
+  ok(vis <= 3, 'New habit shows 3 controls before More options: ' + vis);
+  await p.fill('#h-name', 'Floss'); await p.click('.sheet button[type=submit]'); await p.waitForTimeout(250);
+  let s2 = await stored(p); const fl = s2.habits.find(h => h.name === 'Floss');
+  ok(fl && (!fl.days || fl.days.length === 0) && !(Number(fl.times) > 0), 'habit created with defaults (every day)');
+  await p.click('[data-act="openForm"][data-form="habit"]'); await p.waitForTimeout(250);
+  await p.fill('#h-name', 'Gym'); await p.click('.sheet details.opts > summary'); await p.selectOption('#h-times', '3'); await p.fill('#h-every', '7');
+  await p.click('.sheet button[type=submit]'); await p.waitForTimeout(250);
+  s2 = await stored(p); const gy = s2.habits.find(h => h.name === 'Gym');
+  ok(gy && gy.times === 3 && gy.every === 7, 'More options still work (3× every 7 days)');
   ok(errs.length === 0, 'no page errors ' + errs.join(' / '));
   await b.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'ALL PASSED'); process.exit(fails ? 1 : 0);
 })();
