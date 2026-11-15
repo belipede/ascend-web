@@ -292,7 +292,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- State ----------
-  const VERSION = "v1.6.0-web";
+  const VERSION = "v1.7.0-web";
   const ISSUES = "https://github.com/belipede/ascend-web/issues";
   const EMPTY = () => ({ v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], opens: {}, trialStart: null, savedAt: 0 });
   let FB = { col: null, list: [], open: false, kind: "bug", text: "", sent: "", err: "" };
@@ -322,7 +322,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   const LS = "ascend-proto-v1";
   let ref = null, writing = false, pending = false, timer = null, lastWritten = 0;
   const syncEl = document.getElementById("sync");
-  const setSync = t => { syncEl.textContent = navigator.onLine === false && !window.claude?.use ? "Offline · saved on this phone" : t; };
+  const setSync = t => { syncEl.textContent = t; showNet(); };
 
   function cacheLocal() { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {} }
   function readLocal() { try { const t = localStorage.getItem(LS); return t ? validate(JSON.parse(t)) : null; } catch (e) { return null; } }
@@ -330,6 +330,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   function save() {
     S.savedAt = Date.now();
     cacheLocal();
+    ghSoon();
     if (!ref) { setSync("Saved on this device"); return; }
     setSync("Saving…");
     clearTimeout(timer);
@@ -384,6 +385,71 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     }
   }
   const hasData = () => S && (S.goals.length || S.habits.length || S.tasks.length);
+
+  // ---------- Sync to a private GitHub repo (optional) ----------
+  // Off until a repo and token are entered in More. The settings have their own key and never go into an export.
+  // Same rule as the account sync above: the copy with the newer savedAt wins. Nothing is thrown away: each
+  // upload is a commit, so older versions stay in the repo's history, and before a download replaces this
+  // phone's data, the phone's copy is kept under GHBAK and can be put back from More.
+  const GHKEY = "ascend-gh-sync-v1", GHBAK = "ascend-before-sync", GHFILE = "ascend.json";
+  let gh = (() => { try { return JSON.parse(localStorage.getItem(GHKEY)) || {}; } catch (e) { return {}; } })();
+  let ghBusy = false, ghAgain = false, ghTimer = null, ghTries = 0;
+  const ghOn = () => !!(gh.repo && gh.token);
+  const ghStore = () => { try { localStorage.setItem(GHKEY, JSON.stringify(gh)); } catch (e) {} };
+  const b64e = str => { const b = new TextEncoder().encode(str); let o = ""; for (let i = 0; i < b.length; i += 0x8000) o += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(o); };
+  const b64d = str => new TextDecoder().decode(Uint8Array.from(atob(str.replace(/\s/g, "")), c => c.charCodeAt(0)));
+  const ghErr = (status, msg) => Object.assign(new Error(msg || "GitHub error " + status), { status });
+  async function ghFetch(cfg, path, opts = {}) {
+    const r = await fetch("https://api.github.com/repos/" + cfg.repo + path, { cache: "no-store", ...opts, headers: { Authorization: "Bearer " + cfg.token, Accept: "application/vnd.github+json", ...(opts.body ? { "Content-Type": "application/json" } : {}) } });
+    if (r.status === 404 && (opts.method || "GET") === "GET") return null;
+    if (!r.ok) throw ghErr(r.status);
+    return r.json();
+  }
+  // Returns { sha, data } for the file in the repo, or null if it isn't there yet.
+  async function ghRead(cfg) {
+    const f = await ghFetch(cfg, "/contents/" + GHFILE);
+    if (!f) return null;
+    if (!f.content && f.size) throw ghErr(0, "The file in the repo is too big to sync.");
+    return { sha: f.sha, data: validate(JSON.parse(b64d(f.content || ""))) };
+  }
+  function ghText(e) {
+    if (e instanceof TypeError) return "Couldn't reach GitHub. It will try again when you're online.";
+    if (e.status === 401) return "GitHub didn't accept the token. It may have expired: make a new one and connect again.";
+    if (e.status === 403) return "The token can't write to that repo. Give it Contents: Read and write.";
+    if (e.status === 404) return "Can't find that repo, or the token doesn't include it.";
+    if (e instanceof SyntaxError) return "The file in the repo isn't valid Ascend data.";
+    return e.message || "Sync failed.";
+  }
+  const editing = () => ui.form || ui.confirm || document.activeElement?.matches("input,textarea,select");
+  function ghSoon(ms = 1500) { if (!ghOn()) return; clearTimeout(ghTimer); ghTimer = setTimeout(ghSync, ms); }
+  async function ghSync() {
+    if (!ghOn() || !S || navigator.onLine === false) return;
+    if (ghBusy) { ghAgain = true; return; }
+    ghBusy = true;
+    const cfg = gh;
+    try {
+      const f = await ghRead(cfg);
+      if (cfg !== gh) return;
+      const remote = f?.data;
+      if (remote && remote.savedAt > (S.savedAt || 0)) {
+        if (editing()) { ghSoon(5000); return; }
+        try { localStorage.setItem(GHBAK, JSON.stringify(S)); } catch (e) {}
+        S = remote; cacheLocal(); render();
+      } else if (remote ? S.savedAt > remote.savedAt : (hasData() || S.started)) {
+        const sent = JSON.stringify(S, null, 1), at = S.savedAt;
+        try {
+          await ghFetch(cfg, "/contents/" + GHFILE, { method: "PUT", body: JSON.stringify({ message: "Ascend sync " + new Date(at).toISOString(), content: b64e(sent), ...(f ? { sha: f.sha } : {}) }) });
+        } catch (e) { if ((e.status === 409 || e.status === 422) && ghTries++ < 3) { ghAgain = true; return; } throw e; }
+      }
+      gh.err = ""; gh.lastSync = Date.now(); ghTries = 0; ghStore();
+    } catch (e) {
+      if (cfg === gh) { gh.err = ghText(e); ghStore(); }
+    } finally {
+      ghBusy = false;
+      showNet(); if (tab === "more" && !editing()) render();
+      if (ghAgain) { ghAgain = false; ghSoon(800); }
+    }
+  }
 
   // ---------- Derived values ----------
   const goalById = id => S.goals.find(g => g.id === id);
@@ -945,11 +1011,12 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     <h2>Your reports <small>${FB.list.length}</small></h2>${fbList}
     <div class="btns add"><button type="button" class="btn ghost" data-act="openReport">Report a bug or idea</button></div>
     <h2>Your data</h2><div class="card">
-      <p class="hint">Status: <b>${esc(syncEl.textContent)}</b>. Your data is stored only on this phone, in this Home Screen app, so Ascend works with no signal too. Export now and then and keep the copy in Notes, so you can restore it if anything goes wrong.</p>
+      <p class="hint">Status: <b>${esc(syncEl.textContent)}</b>. ${ghOn() ? `Your data is on this phone and synced to <b>${esc(gh.repo)}</b> on GitHub, so Ascend works with no signal too.` : "Your data is stored only on this phone, in this Home Screen app, so Ascend works with no signal too."} Export now and then and keep the copy in Notes, so you can restore it if anything goes wrong.</p>
       <div class="btns"><button type="button" class="btn ghost" data-act="showExport">${ui.exportShown ? "Hide export" : "Export data"}</button></div>
       ${ui.exportShown ? `<textarea id="exp" readonly aria-label="Exported data">${esc(json)}</textarea><div class="btns"><button type="button" class="btn" data-act="copyExport">Copy</button><button type="button" class="btn ghost" data-act="saveExport">Save as file</button></div>` : ""}
       ${ui.msg ? `<p class="hint">${esc(ui.msg)}</p>` : ""}
     </div>
+    ${renderGh()}
     <h2>Restore from an export</h2><div class="card">
       <label for="imp">Paste an export<textarea id="imp" placeholder='{"v":1, ...}'>${esc(ui.importText)}</textarea></label>
       <label for="impf">Or choose a file<input id="impf" type="file" accept=".json,application/json,text/plain"></label>
@@ -1019,6 +1086,25 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   });
 
   const TITLES = { today: ["Today", "Ascend"], goals: ["The big picture", "Goals"], habits: ["Small steps", "Habits"], tasks: ["To do", "Tasks"], more: ["Settings", "More"] };
+  function renderGh() {
+    const err = ui.ghMsg || gh.err;
+    const bak = (() => { try { return localStorage.getItem(GHBAK) ? 1 : 0; } catch (e) { return 0; } })();
+    if (!ghOn()) return `<h2>Sync to GitHub</h2><div class="card">
+      <p class="hint">Keep a copy in a private GitHub repo. Ascend uploads your changes when you're online and picks up changes made on another device. Every upload is saved in the repo's history.</p>
+      <label for="gh-repo">Private repo<input id="gh-repo" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="belipede/ascend-data" value="${esc(ui.ghRepo || "")}"></label>
+      <label for="gh-token">Access token<input id="gh-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…" value="${esc(ui.ghToken || "")}"></label>
+      <p class="hint">Make a fine-grained token for just this repo with Contents: Read and write. It stays on this phone and isn't included in exports.</p>
+      ${err ? `<p class="err">${esc(err)}</p>` : ""}
+      <div class="btns"><button type="button" class="btn" data-act="ghConnect"${ui.ghBusy ? " disabled" : ""}>${ui.ghBusy ? "Connecting…" : "Connect"}</button></div></div>`;
+    const when = gh.lastSync ? new Date(gh.lastSync).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" }) : "not yet";
+    return `<h2>Sync to GitHub</h2><div class="card">
+      <p class="hint" style="color:var(--ink)">Syncing to <b>${esc(gh.repo)}</b>. Last synced: <b>${esc(when)}</b>.</p>
+      ${navigator.onLine === false ? `<p class="hint">You're offline. Changes are saved on this phone and upload when you're back online.</p>` : ""}
+      ${err ? `<p class="err">${esc(err)}</p>` : ""}
+      <div class="btns"><button type="button" class="btn ghost" data-act="ghNow">Sync now</button><button type="button" class="btn ghost" data-act="ghOff">Turn off sync</button></div>
+      ${bak ? `<p class="hint">If a sync download replaced something you wanted, you can put back this phone's copy from just before the last download.</p><div class="btns"><button type="button" class="btn ghost" data-act="ghUndo">Put back this phone's copy</button></div>` : ""}</div>`;
+  }
+
   function render() {
     if (!S) return;
     const [eb, hd] = TITLES[tab];
@@ -1143,6 +1229,33 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     toggleDay(_, el) { const d = Number(el.dataset.day); draftDays = draftDays.includes(d) ? draftDays.filter(x => x !== d) : [...draftDays, d]; el.setAttribute("aria-pressed", String(draftDays.includes(d))); return Promise.resolve(); },
     confirmYes() { const c = ui.confirm; ui.confirm = null; c?.run(); },
     confirmNo() { ui.confirm = null; },
+    async ghConnect() {
+      const repo = (document.getElementById("gh-repo")?.value || "").trim().replace(/^https?:\/\/github\.com\//, "").replace(/(\.git)?\/?$/, "");
+      const token = (document.getElementById("gh-token")?.value || "").trim();
+      ui.ghRepo = repo; ui.ghToken = token; ui.ghMsg = "";
+      if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { ui.ghMsg = "Enter the repo as owner/name, for example belipede/ascend-data."; render(); return; }
+      if (!token) { ui.ghMsg = "Paste your access token."; render(); return; }
+      ui.ghBusy = true; render();
+      try {
+        const cfg = { repo, token };
+        const info = await ghFetch(cfg, "");
+        if (!info) throw ghErr(404);
+        if (!info.private) { ui.ghMsg = "That repo is public, so anyone could read your data. Make it private on GitHub, then connect again."; return; }
+        const f = await ghRead(cfg);
+        const done = () => { gh = { repo, token }; ghStore(); ui.ghToken = ""; ui.ghRepo = ""; ghSync(); };
+        if (f && hasData() && f.data.savedAt !== S.savedAt) {
+          const d = f.data;
+          ui.confirm = { text: `That repo already has Ascend data (${d.goals.length} goals, ${d.habits.length} habits, ${d.tasks.length} tasks, saved ${d.savedAt ? new Date(d.savedAt).toLocaleString() : "earlier"}). Replace this phone's data with it? This phone's copy is kept so you can put it back.`, yes: "Use the repo's data", run: () => { try { localStorage.setItem(GHBAK, JSON.stringify(S)); } catch (e) {} S = d; cacheLocal(); gh = { repo, token, lastSync: Date.now() }; ghStore(); ui.ghToken = ""; ui.ghRepo = ""; } };
+        } else done();
+      } catch (e) { ui.ghMsg = ghText(e); }
+      finally { ui.ghBusy = false; render(); }
+    },
+    ghNow() { gh.err = ""; ui.ghMsg = ""; ghSync(); return Promise.resolve(); },
+    ghOff() { ui.confirm = { text: "Stop syncing to GitHub on this phone? Your data stays here and in the repo.", yes: "Turn off sync", run: () => { gh = {}; ghStore(); ui.ghMsg = ""; showNet(); } }; },
+    ghUndo() {
+      let d; try { d = validate(JSON.parse(localStorage.getItem(GHBAK))); } catch (e) { ui.msg = "That copy couldn't be read."; return; }
+      ui.confirm = { text: `Put back this phone's copy from before the last sync download (${d.goals.length} goals, ${d.habits.length} habits, ${d.tasks.length} tasks)? It will then sync as your latest data.`, yes: "Put it back", run: () => { S = d; localStorage.removeItem(GHBAK); save(); } };
+    },
     showExport() { ui.exportShown = !ui.exportShown; ui.msg = ""; },
     async copyExport() { const ta = document.getElementById("exp"); try { await navigator.clipboard.writeText(ta.value); ui.msg = "Copied. Paste it somewhere safe, like Notes."; } catch (e) { ta.select(); ui.msg = "Select all the text above and copy it."; } render(); },
     async saveExport() {
@@ -1255,7 +1368,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     if (kind === "log") { const amount = Number(fd.get("amount")); if (!Number.isFinite(amount) || amount === 0) return; S.entries.push({ id: uid(), goalId: f.dataset.id, day: today(), amount, note: String(fd.get("note") || "").trim() }); }
     S.started = true; ui.form = null; save(); render();
   });
-  document.addEventListener("input", e => { if (e.target.id === "imp") ui.importText = e.target.value; if (e.target.id === "fb-text") FB.text = e.target.value; });
+  document.addEventListener("input", e => { if (e.target.id === "imp") ui.importText = e.target.value; if (e.target.id === "gh-repo") ui.ghRepo = e.target.value; if (e.target.id === "gh-token") ui.ghToken = e.target.value; if (e.target.id === "fb-text") FB.text = e.target.value; });
   document.addEventListener("change", e => {
     if (e.target.id !== "impf" || !e.target.files?.[0]) return;
     const r = new FileReader();
@@ -1275,7 +1388,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   S = readLocal() || EMPTY();
   setSync(window.claude?.use ? "Connecting…" : "Saved on this device");
   render();
-  connect().then(() => { markOpen(); render(); });
+  connect().then(() => { markOpen(); render(); ghSync(); });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) markOpen(); });
   // ---------- Updates ----------
   // A Home Screen app on iPhone can keep showing a stored copy of this page. When the app opens or
@@ -1309,13 +1422,16 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   // sw.js keeps a copy of the app on the phone so it opens with no signal. Ticks are saved to
   // localStorage either way, so tracking offline works the same; the header just says you're offline.
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
+  // The header label shows only when something needs attention: offline, or GitHub sync failing.
   function showNet() {
-    const off = navigator.onLine === false;
-    syncEl.hidden = !off;
+    const off = navigator.onLine === false && !window.claude?.use, bad = ghOn() && gh.err;
+    syncEl.hidden = !(off || bad);
     if (off) syncEl.textContent = "Offline · saved on this phone";
-    else if (syncEl.textContent.startsWith("Offline")) setSync("Saved on this device");
+    else if (bad) syncEl.textContent = "Not synced · see More";
+    else if (/^(Offline|Not synced)/.test(syncEl.textContent)) setSync(ghOn() ? "Saved on this device and GitHub" : "Saved on this device");
   }
-  addEventListener("online", () => { showNet(); checkUpdate(); });
+  addEventListener("online", () => { showNet(); checkUpdate(); ghSync(); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) ghSync(); });
   addEventListener("offline", showNet);
   showNet();
 })();
