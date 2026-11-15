@@ -298,7 +298,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- State ----------
-  const VERSION = "v1.8.0-web";
+  const VERSION = "v1.8.1-web";
   const ISSUES = "https://github.com/belipede/ascend-web/issues";
   const EMPTY = () => ({ v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], opens: {}, trialStart: null, savedAt: 0 });
   let FB = { col: null, list: [], open: false, kind: "bug", text: "", sent: "", err: "" };
@@ -897,7 +897,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     </div>`;
     return `<div class="welcome card">
       <p style="color:var(--ink);font-weight:700;font-family:var(--font-display);font-size:20px">🌱 Turn a big goal into what you do today.</p>
-      <p>Start from an example, or set things up yourself. Habits and tasks work fine without a goal; you can link one later.</p>
+      ${safariNote()}<p>Start from an example, or set things up yourself. Habits and tasks work fine without a goal; you can link one later.</p>
       <div class="btns"><button type="button" class="btn" data-act="template">Start with "Read 24 books"</button><button type="button" class="btn ghost" data-act="blank">Start blank</button></div>
     </div>`;
   }
@@ -945,6 +945,11 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     const t = today(), focus = ui.focus && S.goals.some(g => g.id === ui.focus && !g.archived) ? ui.focus : null;
     return S.tasks.filter(x => !x.dropped && !x.done && x.due && x.due < t && (!focus || x.goalId === focus));
   }
+  // On iPhone, Safari and the Home Screen app keep separate data. Say so when this is Safari, not the icon.
+  function safariNote() {
+    if (navigator.standalone !== false || !/iPhone|iPad/.test(navigator.userAgent)) return "";
+    return `<p class="note"><span>You're in Safari. If you use Ascend from your Home Screen icon, your data is there, not here: Safari and the icon keep separate copies.</span></p>`;
+  }
   // A weekly nudge to export, unless GitHub sync is keeping a copy. "Later" waits 3 days.
   const WEEK_MS = 7 * 24 * 3600 * 1000;
   function exportDue() {
@@ -961,11 +966,10 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     const focus = ui.focus && goals.some(g => g.id === ui.focus) ? ui.focus : null;
     const inFocus = x => !focus || x.goalId === focus;
     const overdue = past ? [] : overdueShown();
-    const noDate = past ? [] : S.tasks.filter(x => !x.dropped && !x.done && !x.due);
+    const noDate = past ? [] : S.tasks.filter(x => !x.dropped && !x.due && (!x.done || x.doneOn === t));
     const { done, total } = dayCounts(d);
     const [big, small] = cheer(done, total, past);
-    const trialDay = S.trialStart ? daysBetween(S.trialStart, t) + 1 : 1;
-    let h = trialDay <= 7 ? `<p class="hint" style="margin:0 0 10px">Trial day ${trialDay} of 7. Spot something off? Report it from More.</p>` : "";
+    let h = safariNote();
     if (ui.restoredMsg) { h += `<p class="note"><span>${esc(ui.restoredMsg)}</span></p>`; ui.restoredMsg = ""; }
     h += `<div class="hello"><p><b>${big}</b>${small}</p>${ring(done, total)}</div>`;
     if (!past && exportDue()) h += `<p class="note"><span>It's been a week since your data was last exported. A copy in Notes or Files keeps it safe if this phone loses it.</span><span style="display:flex;gap:4px"><button type="button" class="mini" data-act="goExport" style="min-height:32px;padding:4px 6px">Export</button><button type="button" class="mini muted" data-act="snoozeExport" style="min-height:32px;padding:4px 6px">Later</button></span></p>`;
@@ -978,7 +982,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     const goalOf = x => x.goalId && goals.some(g => g.id === x.goalId) ? x.goalId : null;
     const items = [...due.map(x => ({ x, row: () => habitRow(x, d), done: finished(x) })),
       ...tasksToday.map(x => ({ x, row: () => taskRow(x), done: !!x.done })),
-      ...noDate.map(x => ({ x, row: () => taskRow(x), done: false }))].filter(i => inFocus(i.x));
+      ...noDate.map(x => ({ x, row: () => taskRow(x), done: !!x.done }))].filter(i => inFocus(i.x));
     const open = items.filter(i => !i.done), fin = items.filter(i => i.done);
     const byTime = uiPrefs.groupBy === "time";
     if (open.length) h += `<div class="seg" role="group" aria-label="Group Today by"><button type="button" data-act="groupBy" data-id="goal" aria-pressed="${!byTime}">By goal</button><button type="button" data-act="groupBy" data-id="time" aria-pressed="${byTime}">By time of day</button></div>`;
@@ -1003,7 +1007,8 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
       h += `<button type="button" class="fold" data-act="toggleDone" aria-expanded="${!!ui.showDone}">Done (${fin.length}) ${ui.showDone ? "⌃" : "›"}</button>`;
       if (ui.showDone) h += `<div class="list">${fin.map(i => i.row()).join("")}</div>`;
     }
-    if (!past && open.some(i => i.x.name) && !Object.values(S.logs).some(l => Object.values(l).includes("rest"))) h += `<p class="tip">Tip: press and hold a habit's circle to take a rest day. Rest never counts against you.</p>`;
+    if (!past && !uiPrefs.swiped && open.some(i => i.x.title)) h += `<p class="tip">Tip: swipe a task left to move it to tomorrow or edit it.</p>`;
+    else if (!past && open.some(i => i.x.name) && !Object.values(S.logs).some(l => Object.values(l).includes("rest"))) h += `<p class="tip">Tip: press and hold a habit's circle to take a rest day. Rest never counts against you.</p>`;
     if (past) return h + confirmBox();
     h += quickAdd();
     if (overdue.length) {
@@ -1131,7 +1136,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
       <div class="fields"><label for="t-goal">Counts toward<select id="t-goal" name="goalId">${goalOptions(t.goalId || "")}</select></label>
       <label for="t-amt">Amount when done<input id="t-amt" name="amount" type="number" inputmode="decimal" step="any" min="0" value="${esc(t.goalId || !e ? t.amount || 1 : 1)}"></label></div>
       ${partSelect(t.part, "t-part")}
-      ${formBtns(e ? "Save task" : "Create task", e ? `<button type="button" class="btn ghost" style="color:var(--warn)" data-act="askDeleteTask" data-id="${t.id}">Delete</button>` : "")}</form>`;
+      ${formBtns(e ? "Save task" : "Create task", e ? `${!t.done ? `<button type="button" class="btn ghost" data-act="moveTomorrow" data-id="${t.id}">Move to tomorrow</button>` : ""}<button type="button" class="btn ghost" style="color:var(--warn)" data-act="askDeleteTask" data-id="${t.id}">Delete</button>` : "")}</form>`;
   }
   function renderTasks() {
     const open = S.tasks.filter(t => !t.dropped && !t.done).sort((a, b) => (a.due || "9999") < (b.due || "9999") ? -1 : (a.due || "9999") > (b.due || "9999") ? 1 : a.priority - b.priority);
@@ -1153,7 +1158,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     const t = today();
     let opened = 0; for (let i = 0; i < 7; i++) if (S.opens?.[addDays(t, -i)]) opened++;
     const fbList = FB.list.length ? `<div class="list">${FB.list.map(f => `<div class="row"><div class="main"><div class="title">${esc(f.text)}</div><div class="sub"><span class="chip ${f.kind === "bug" ? "warn" : ""}">${f.kind === "bug" ? "Bug" : "Idea"}</span><span>${esc(f.day || "")}</span>${f.status ? `<span class="chip">${esc(f.status)}</span>` : "<span>Waiting for Claude</span>"}</div></div></div>`).join("")}</div>` : `<div class="list"><div class="empty">Your reports live on GitHub: <a href="${ISSUES}" style="color:var(--accent)">see all reports</a>. Claude marks each one when it's fixed.</div></div>`;
-    return `<h2>Your trial</h2><div class="card"><p class="hint" style="color:var(--ink)">You opened Ascend on <b>${opened} of the last 7 days</b>${S.trialStart ? ` (trial started ${fmtDay(S.trialStart)})` : ""}.</p><p class="hint">This counts days you opened the app, to check whether it fits your routine. It stays in your data and isn't sent anywhere else.</p></div>
+    return `<h2>How often you open Ascend</h2><div class="card"><p class="hint" style="color:var(--ink)">You opened Ascend on <b>${opened} of the last 7 days</b>${S.trialStart ? ` (counting since ${fmtDay(S.trialStart)})` : ""}.</p><p class="hint">This counts days you opened the app, to check whether it fits your routine. It stays in your data and isn't sent anywhere else.</p></div>
     <h2>Your reports <small>${FB.list.length}</small></h2>${fbList}
     <div class="btns add"><button type="button" class="btn ghost" data-act="openReport">Report a bug or idea</button></div>
     <h2>Your data</h2><div class="card">
@@ -1173,7 +1178,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     <h2>Start over</h2><div class="card"><p class="hint">Deletes all goals, habits, tasks and history. Export first if you want a copy.</p><div class="btns"><button type="button" class="btn ghost" data-act="askReset" style="color:var(--warn)">Delete everything</button></div></div>
     <h2>App version</h2><div class="card"><p style="margin:0"><b>${VERSION.replace(/-web$/, "")}</b></p><p class="hint" style="margin:4px 0 0">Ascend checks for a new version each time you open it. You can also check now.</p>
       <div class="btns"><button type="button" class="btn ghost" data-act="checkNow" ${ui.updating ? "disabled" : ""}>${ui.updating ? "Checking…" : "Check for updates"}</button></div>${ui.updMsg ? `<p class="hint" role="status" style="margin:8px 0 0">${esc(ui.updMsg)}</p>` : ""}</div>
-    <h2>About</h2><div class="card"><p class="hint">Ascend web ${VERSION}. Free, private, and your data never leaves this phone. The native iPhone app comes later.</p></div>
+    <h2>About</h2><div class="card"><p class="hint">Ascend web ${VERSION}. Free and private: your data stays on this phone${ghOn() ? " and in your own GitHub repo" : ""}, and nothing is sent to anyone else. The app loads its font from Google Fonts, which sees your IP address. The native iPhone app comes later.</p></div>
     <h2>Add to Home Screen</h2><div class="card"><p class="hint">In Safari, tap Share, then "Add to Home Screen". From then on open Ascend from that icon: the icon and Safari keep separate data.</p></div>`;
   }
 
@@ -1271,7 +1276,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   function applyTemplate() {
     const t = today(), g = { id: uid(), name: "Read 24 books", emoji: "📚", color: "green", target: 24, unit: "books", deadline: `${parse(t).getFullYear()}-12-31`, createdDay: t };
     S.goals.push(g);
-    S.habits.push({ id: uid(), name: "Read for 20 minutes", emoji: "📖", days: [], goalId: null, amount: 0, startDay: t });
+    S.habits.push({ id: uid(), name: "Read for 20 minutes", emoji: "📖", days: [], goalId: g.id, amount: 0, startDay: t });
     S.tasks.push({ id: uid(), title: "Finish current book", due: addDays(t, 6), priority: 2, goalId: g.id, amount: 1, done: false });
     S.tasks.push({ id: uid(), title: "Pick the next book", due: t, priority: 3, goalId: null, amount: 0, done: false });
     S.started = true;
@@ -1359,7 +1364,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
       const undo = () => { setLog(id, k, () => prev || null); h.startDay = start; save(); };
       toast(logOf(h, k) === "rest" ? `Rest day for ${esc(h.name)}. Rest is part of the plan. 🌿` : `Rest day removed`, undo);
     },
-    moveTomorrow(id) { const x = S.tasks.find(t => t.id === id); if (!x) return; const was = x.due; x.due = addDays(today(), 1); save(); toast(`Moved to tomorrow. Future you has it. 👍`, () => { x.due = was; save(); }); },
+    moveTomorrow(id) { const x = S.tasks.find(t => t.id === id); if (!x) return; const was = x.due; ui.form = null; x.due = addDays(today(), 1); save(); toast(`Moved to tomorrow. Future you has it. 👍`, () => { x.due = was; save(); }); },
     groupBy(v) { uiPrefs.groupBy = v === "time" ? "time" : "goal"; saveUiPrefs(); },
     focusGoal(id) { ui.focus = ui.focus === id ? null : id; },
     toggleDone() { ui.showDone = !ui.showDone; },
@@ -1500,6 +1505,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     if (!sw) return;
     if (sw.on) {
       swiped = true; setTimeout(() => { swiped = false; }, 50);
+      if (!uiPrefs.swiped) { uiPrefs.swiped = true; saveUiPrefs(); }
       const x = parseFloat((sw.row.style.transform.match(/-?[\d.]+/) || [0])[0]);
       const open = x < -ACTS_W / 2;
       setX(sw.row, open ? -ACTS_W : 0, true); swOpen = open ? sw.wrap : null;
@@ -1567,6 +1573,11 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     const r = new FileReader();
     r.onload = () => { ui.importText = String(r.result || ""); ui.importErr = ""; render(); };
     r.readAsText(e.target.files[0]);
+  });
+  // Another window of Ascend saved: load its copy so this one doesn't write over it with older data.
+  addEventListener("storage", e => {
+    if (e.key !== LS || !e.newValue || LOCKED !== null) return;
+    try { const d = validate(JSON.parse(e.newValue)); if ((d.savedAt || 0) >= (S.savedAt || 0)) { S = d; if (!ui.form) render(); } } catch (err) {}
   });
   // Re-render when the app comes back so "today" rolls over at local midnight.
   document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
