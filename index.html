@@ -120,6 +120,8 @@ textarea { min-height: 140px; font-family: ui-monospace, Menlo, monospace; font-
 .hint { font-size: 13px; color: var(--muted); margin: 0; }
 .err { font-size: 13px; color: var(--warn); margin: 0; }
 .saveerr { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--warn); background: var(--card, transparent); color: var(--ink); font-size: 14px; }
+details.opts > summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--accent); min-height: 44px; display: flex; align-items: center; }
+details.opts > * + * { margin-top: 12px; }
 .saveerr p { margin: 0 0 8px; }
 .baklist { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .baklist li { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; }
@@ -298,7 +300,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- State ----------
-  const VERSION = "v1.8.1-web";
+  const VERSION = "v1.9.0-web";
   const ISSUES = "https://github.com/belipede/ascend-web/issues";
   const EMPTY = () => ({ v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], opens: {}, trialStart: null, savedAt: 0 });
   let FB = { col: null, list: [], open: false, kind: "bug", text: "", sent: "", err: "" };
@@ -950,6 +952,31 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     if (navigator.standalone !== false || !/iPhone|iPad/.test(navigator.userAgent)) return "";
     return `<p class="note"><span>You're in Safari. If you use Ascend from your Home Screen icon, your data is there, not here: Safari and the icon keep separate copies.</span></p>`;
   }
+  // The 14-day check Ben agreed on 2026-11-15: open Ascend on at least 10 of 14 days, and tick something
+  // that counts toward a goal on at least 7. It starts the first day this version opens with data, and is
+  // kept with the other display settings on this phone (not in your data or exports).
+  const CHECK_DAYS = 14, CHECK_OPENS = 10, CHECK_GOAL_DAYS = 7;
+  function goalDays(from, to) {
+    const days = new Set();
+    for (const h of S.habits) if (h.goalId) for (const [k, v] of Object.entries(S.logs[h.id] || {})) if (v === "done" && k >= from && k <= to) days.add(k);
+    for (const t of S.tasks) if (t.goalId && t.done && t.doneOn && t.doneOn >= from && t.doneOn <= to) days.add(t.doneOn);
+    for (const e of S.entries) if (e.day >= from && e.day <= to) days.add(e.day);
+    return days.size;
+  }
+  function checkStatus() {
+    const start = uiPrefs.checkStart; if (!start) return null;
+    const t = today(), end = addDays(start, CHECK_DAYS - 1), to = t < end ? t : end;
+    let opens = 0; for (let k = start; k <= to; k = addDays(k, 1)) if (S.opens?.[k]) opens++;
+    return { start, end, day: Math.min(CHECK_DAYS, daysBetween(start, t) + 1), done: t > end, opens, goal: goalDays(start, to) };
+  }
+  function checkCard() {
+    const c = checkStatus(); if (!c) return "";
+    const pass = c.opens >= CHECK_OPENS && c.goal >= CHECK_GOAL_DAYS;
+    const head = c.done ? (pass ? "Passed: Ascend fits your routine. 🎉" : "Finished: Ascend didn't quite stick this time.") : `Day ${c.day} of ${CHECK_DAYS}`;
+    return `<h2>Your 14-day check</h2><div class="card"><p class="hint" style="color:var(--ink)"><b>${head}</b> (${fmtDay(c.start)} to ${fmtDay(c.end)})</p>
+      <p class="hint">Opened Ascend: <b>${c.opens} of ${CHECK_OPENS}</b> days needed.<br>Ticked something that counts toward a goal: <b>${c.goal} of ${CHECK_GOAL_DAYS}</b> days needed.</p>
+      <p class="hint">${c.done ? "Tell Claude the result, and whether the app helped, to decide what comes next." : "No new features while this runs. Just use Ascend as you normally would."}</p></div>`;
+  }
   // A weekly nudge to export, unless GitHub sync is keeping a copy. "Later" waits 3 days.
   const WEEK_MS = 7 * 24 * 3600 * 1000;
   function exportDue() {
@@ -972,6 +999,8 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     let h = safariNote();
     if (ui.restoredMsg) { h += `<p class="note"><span>${esc(ui.restoredMsg)}</span></p>`; ui.restoredMsg = ""; }
     h += `<div class="hello"><p><b>${big}</b>${small}</p>${ring(done, total)}</div>`;
+    const cs = !past && checkStatus();
+    if (cs && cs.done && uiPrefs.checkSeen !== cs.start) h += `<p class="note"><span>Your 14-day check is finished: opened on ${cs.opens} days, goal progress on ${cs.goal}. See More for details.</span><button type="button" class="mini" data-act="seenCheck" style="min-height:32px;padding:4px 6px">OK</button></p>`;
     if (!past && exportDue()) h += `<p class="note"><span>It's been a week since your data was last exported. A copy in Notes or Files keeps it safe if this phone loses it.</span><span style="display:flex;gap:4px"><button type="button" class="mini" data-act="goExport" style="min-height:32px;padding:4px 6px">Export</button><button type="button" class="mini muted" data-act="snoozeExport" style="min-height:32px;padding:4px 6px">Later</button></span></p>`;
     h += dayStrip(d);
     if (past) h += `<p class="note"><span>Logging habits for <b>${fmtDay(d)}</b>.</span><button type="button" class="mini" data-act="pickDay" data-day="${t}" style="min-height:32px;padding:4px 6px">Back to today</button></p>`;
@@ -1058,15 +1087,18 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     const e = !!x; x = x || { amount: 1 };
     return `${e ? "" : "<h2>New habit</h2>"}<form class="card" data-form="habit" data-id="${e ? x.id : ""}" data-autofocus>
       <label for="h-name">Habit<input id="h-name" name="name" required maxlength="80" placeholder="Read for 20 minutes" value="${esc(x.name)}"></label>
+      <div class="fields"><label for="h-goal">Counts toward<select id="h-goal" name="goalId">${goalOptions(x.goalId || "")}</select></label>
+      <label for="h-amt">Amount per check-in<input id="h-amt" name="amount" type="number" inputmode="decimal" step="any" min="0" value="${esc(x.goalId || !e ? x.amount || 1 : 1)}"></label></div>
+      <details class="opts"${e ? " open" : ""}><summary>${e ? "Schedule and look" : "More options: days, times per week, time of day, colour"}</summary>
+      <p class="hint" style="margin:0">${e ? "" : "Leave these and it's every day, any time."}</p>
       <div><span class="hint" style="font-weight:600">Days (none selected = every day)</span><div class="days" style="margin-top:6px">${[1, 2, 3, 4, 5, 6, 0].map(i => `<button type="button" aria-pressed="${draftDays.includes(i)}" data-act="toggleDay" data-day="${i}" aria-label="${DAY_LETTERS[i]}">${DAY_LETTERS[i]}</button>`).join("")}</div></div>
       <div><span class="hint" style="font-weight:600">Or a number of times, on any days</span>
       <div class="fields" style="margin-top:6px"><label for="h-times">Times<select id="h-times" name="times"><option value="0">Use the days above</option>${Array.from({ length: 20 }, (_, i) => i + 1).map(n => `<option value="${n}" ${Number(x.times) === n ? "selected" : ""}>${n}×</option>`).join("")}</select></label>
       <label for="h-every">Every (days)<input id="h-every" name="every" type="number" inputmode="numeric" min="2" max="365" step="1" value="${esc(isCount(x) ? x.every : 7)}"></label></div>
       <p class="hint" style="margin-top:6px">For example 3× every 10 days. The count starts again every 10 days, from the day you save${e && isCount(x) ? " (or keeps its current timing if you don't change the days)" : ""}.</p></div>
-      <div class="fields"><label for="h-goal">Counts toward<select id="h-goal" name="goalId">${goalOptions(x.goalId || "")}</select></label>
-      <label for="h-amt">Amount per check-in<input id="h-amt" name="amount" type="number" inputmode="decimal" step="any" min="0" value="${esc(x.goalId || !e ? x.amount || 1 : 1)}"></label></div>
       ${partSelect(x.part, "h-part")}
       ${lookPicker(x, true)}
+      </details>
       ${e ? `<p class="hint">Changing the goal or amount also changes what past check-ins added to goals. Check-in history stays.</p>` : ""}
       ${formBtns(e ? "Save habit" : "Create habit")}</form>`;
   }
@@ -1158,7 +1190,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     const t = today();
     let opened = 0; for (let i = 0; i < 7; i++) if (S.opens?.[addDays(t, -i)]) opened++;
     const fbList = FB.list.length ? `<div class="list">${FB.list.map(f => `<div class="row"><div class="main"><div class="title">${esc(f.text)}</div><div class="sub"><span class="chip ${f.kind === "bug" ? "warn" : ""}">${f.kind === "bug" ? "Bug" : "Idea"}</span><span>${esc(f.day || "")}</span>${f.status ? `<span class="chip">${esc(f.status)}</span>` : "<span>Waiting for Claude</span>"}</div></div></div>`).join("")}</div>` : `<div class="list"><div class="empty">Your reports live on GitHub: <a href="${ISSUES}" style="color:var(--accent)">see all reports</a>. Claude marks each one when it's fixed.</div></div>`;
-    return `<h2>How often you open Ascend</h2><div class="card"><p class="hint" style="color:var(--ink)">You opened Ascend on <b>${opened} of the last 7 days</b>${S.trialStart ? ` (counting since ${fmtDay(S.trialStart)})` : ""}.</p><p class="hint">This counts days you opened the app, to check whether it fits your routine. It stays in your data and isn't sent anywhere else.</p></div>
+    return `${checkCard()}<h2>How often you open Ascend</h2><div class="card"><p class="hint" style="color:var(--ink)">You opened Ascend on <b>${opened} of the last 7 days</b>${S.trialStart ? ` (counting since ${fmtDay(S.trialStart)})` : ""}.</p><p class="hint">This counts days you opened the app, to check whether it fits your routine. It stays in your data and isn't sent anywhere else.</p></div>
     <h2>Your reports <small>${FB.list.length}</small></h2>${fbList}
     <div class="btns add"><button type="button" class="btn ghost" data-act="openReport">Report a bug or idea</button></div>
     <h2>Your data</h2><div class="card">
@@ -1451,6 +1483,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     },
     retrySave() { save(); if (!saveErr) toast("Saved."); },
     goExport() { tab = "more"; ui.exportShown = true; ui.form = null; ui.confirm = null; ui.detail = null; ui.msg = ""; window.scrollTo(0, 0); },
+    seenCheck() { const c = checkStatus(); if (c) { uiPrefs.checkSeen = c.start; saveUiPrefs(); } },
     snoozeExport() { uiPrefs.exportSnooze = Date.now(); saveUiPrefs(); },
     askRestoreBackup(key) {
       const b = listBackups().find(x => x.key === key); if (!b) return;
@@ -1586,6 +1619,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   function markOpen() {
     if (LOCKED !== null) return;
     const t = today();
+    if (hasData() && !uiPrefs.checkStart) { uiPrefs.checkStart = t; saveUiPrefs(); }
     S.opens ||= {};
     if (hasData() && !S.trialStart) S.trialStart = t;
     if (hasData() && !S.opens[t]) { S.opens[t] = true; save(); }
