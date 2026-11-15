@@ -292,7 +292,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- State ----------
-  const VERSION = "v1.5.2-web";
+  const VERSION = "v1.6.0-web";
   const ISSUES = "https://github.com/belipede/ascend-web/issues";
   const EMPTY = () => ({ v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], opens: {}, trialStart: null, savedAt: 0 });
   let FB = { col: null, list: [], open: false, kind: "bug", text: "", sent: "", err: "" };
@@ -322,7 +322,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   const LS = "ascend-proto-v1";
   let ref = null, writing = false, pending = false, timer = null, lastWritten = 0;
   const syncEl = document.getElementById("sync");
-  const setSync = t => { syncEl.textContent = t; };
+  const setSync = t => { syncEl.textContent = navigator.onLine === false && !window.claude?.use ? "Offline · saved on this phone" : t; };
 
   function cacheLocal() { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {} }
   function readLocal() { try { const t = localStorage.getItem(LS); return t ? validate(JSON.parse(t)) : null; } catch (e) { return null; } }
@@ -945,7 +945,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     <h2>Your reports <small>${FB.list.length}</small></h2>${fbList}
     <div class="btns add"><button type="button" class="btn ghost" data-act="openReport">Report a bug or idea</button></div>
     <h2>Your data</h2><div class="card">
-      <p class="hint">Status: <b>${esc(syncEl.textContent)}</b>. Your data is stored only on this phone, in this Home Screen app. Export now and then and keep the copy in Notes, so you can restore it if anything goes wrong.</p>
+      <p class="hint">Status: <b>${esc(syncEl.textContent)}</b>. Your data is stored only on this phone, in this Home Screen app, so Ascend works with no signal too. Export now and then and keep the copy in Notes, so you can restore it if anything goes wrong.</p>
       <div class="btns"><button type="button" class="btn ghost" data-act="showExport">${ui.exportShown ? "Hide export" : "Export data"}</button></div>
       ${ui.exportShown ? `<textarea id="exp" readonly aria-label="Exported data">${esc(json)}</textarea><div class="btns"><button type="button" class="btn" data-act="copyExport">Copy</button><button type="button" class="btn ghost" data-act="saveExport">Save as file</button></div>` : ""}
       ${ui.msg ? `<p class="hint">${esc(ui.msg)}</p>` : ""}
@@ -1283,7 +1283,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   // reload from a fresh address. Data is already saved in localStorage, so nothing is lost.
   // Returns "latest", "updating", "offline" or "skipped". "Check for updates" in More passes manual.
   async function checkUpdate(manual) {
-    if (location.protocol !== "https:") return "skipped";
+    if (location.protocol !== "https:" && location.hostname !== "localhost") return "skipped";
     if (!manual && (ui.form || ui.confirm || document.activeElement?.matches("input,textarea,select"))) return "skipped";
     try {
       const r = await fetch("./?check=" + Date.now(), { cache: "no-store" });
@@ -1305,6 +1305,19 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   };
   checkUpdate();
   document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
+  // ---------- Offline ----------
+  // sw.js keeps a copy of the app on the phone so it opens with no signal. Ticks are saved to
+  // localStorage either way, so tracking offline works the same; the header just says you're offline.
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
+  function showNet() {
+    const off = navigator.onLine === false;
+    syncEl.hidden = !off;
+    if (off) syncEl.textContent = "Offline · saved on this phone";
+    else if (syncEl.textContent.startsWith("Offline")) setSync("Saved on this device");
+  }
+  addEventListener("online", () => { showNet(); checkUpdate(); });
+  addEventListener("offline", showNet);
+  showNet();
 })();
 </script>
 
