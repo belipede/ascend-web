@@ -292,7 +292,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- State ----------
-  const VERSION = "v1.5.1-web";
+  const VERSION = "v1.5.2-web";
   const ISSUES = "https://github.com/belipede/ascend-web/issues";
   const EMPTY = () => ({ v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], opens: {}, trialStart: null, savedAt: 0 });
   let FB = { col: null, list: [], open: false, kind: "bug", text: "", sent: "", err: "" };
@@ -957,6 +957,8 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
       <div class="btns"><button type="button" class="btn" data-act="askImport">Restore</button></div>
     </div>${confirmBox()}
     <h2>Start over</h2><div class="card"><p class="hint">Deletes all goals, habits, tasks and history. Export first if you want a copy.</p><div class="btns"><button type="button" class="btn ghost" data-act="askReset" style="color:var(--warn)">Delete everything</button></div></div>
+    <h2>App version</h2><div class="card"><p style="margin:0"><b>${VERSION.replace(/-web$/, "")}</b></p><p class="hint" style="margin:4px 0 0">Ascend checks for a new version each time you open it. You can also check now.</p>
+      <div class="btns"><button type="button" class="btn ghost" data-act="checkNow" ${ui.updating ? "disabled" : ""}>${ui.updating ? "Checking…" : "Check for updates"}</button></div>${ui.updMsg ? `<p class="hint" role="status" style="margin:8px 0 0">${esc(ui.updMsg)}</p>` : ""}</div>
     <h2>About</h2><div class="card"><p class="hint">Ascend web ${VERSION}. Free, private, and your data never leaves this phone. The native iPhone app comes later.</p></div>
     <h2>Add to Home Screen</h2><div class="card"><p class="hint">In Safari, tap Share, then "Add to Home Screen". From then on open Ascend from that icon: the icon and Safari keep separate data.</p></div>`;
   }
@@ -1279,17 +1281,28 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   // A Home Screen app on iPhone can keep showing a stored copy of this page. When the app opens or
   // comes back, ask the server for the current page, skipping every cache. If its version differs,
   // reload from a fresh address. Data is already saved in localStorage, so nothing is lost.
-  async function checkUpdate() {
-    if (location.protocol !== "https:" || ui.form || ui.confirm || document.activeElement?.matches("input,textarea,select")) return;
+  // Returns "latest", "updating", "offline" or "skipped". "Check for updates" in More passes manual.
+  async function checkUpdate(manual) {
+    if (location.protocol !== "https:") return "skipped";
+    if (!manual && (ui.form || ui.confirm || document.activeElement?.matches("input,textarea,select"))) return "skipped";
     try {
       const r = await fetch("./?check=" + Date.now(), { cache: "no-store" });
-      if (!r.ok) return;
+      if (!r.ok) return "offline";
       const v = ((await r.text()).match(/const VERSION = "([^"]+)"/) || [])[1];
-      if (!v || v === VERSION || new URLSearchParams(location.search).get("v") === v) return;
+      if (!v || v === VERSION) return "latest";
+      if (!manual && new URLSearchParams(location.search).get("v") === v) return "latest";
       cacheLocal();
-      location.replace("./?v=" + encodeURIComponent(v));
-    } catch (e) {}
+      location.replace("./?v=" + encodeURIComponent(v) + (manual ? "&t=" + Date.now() : ""));
+      return "updating";
+    } catch (e) { return "offline"; }
   }
+  actions.checkNow = async () => {
+    ui.updating = true; ui.updMsg = ""; render();
+    const res = await checkUpdate(true);
+    ui.updating = false;
+    ui.updMsg = res === "latest" ? `You're up to date (${VERSION.replace(/-web$/, "")}).` : res === "updating" ? "Updating now…" : res === "offline" ? "Couldn't reach the server. Check you're online and try again." : "Updates are only checked on the live app.";
+    render();
+  };
   checkUpdate();
   document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
 })();
