@@ -253,6 +253,42 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   @keyframes sheetup { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
   .srow > .row.snap { transition: transform .18s ease; }
 }
+/* Pickers: tap a pill for the date or priority. The date pill opens the phone's own date picker. */
+.pickrow { display: flex; flex-direction: column; gap: 6px; }
+.pickrow > .hint { font-weight: 600; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pills button, .pills label.pill { font: inherit; font-size: 14px; font-weight: 600; min-height: 40px; padding: 0 13px; border-radius: 99px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; position: relative; display: inline-flex; flex-direction: row; align-items: center; gap: 4px; white-space: nowrap; }
+.pills [aria-checked="true"], .pills label.pill.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.pills button.hi[aria-checked="true"] { background: var(--warn); border-color: var(--warn); color: var(--surface); }
+.pills button.lo[aria-checked="true"] { background: var(--rest); border-color: var(--rest); color: var(--surface); }
+label.pill input[type="date"] { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; cursor: pointer; }
+label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Goal steps */
+.msl { display: flex; flex-direction: column; gap: 8px; }
+.msrow { display: flex; gap: 6px; align-items: center; }
+.msrow input[name="ms-name"] { flex: 1; min-width: 0; }
+.msrow .pills { flex: none; flex-wrap: nowrap; }
+.msrow .pills label.pill { min-height: 44px; padding: 0 10px; font-size: 13px; }
+.msrow .mini { flex: none; width: 36px; padding: 0; font-size: 16px; }
+.steps { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+.steps .sh { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; justify-content: space-between; }
+.step { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.step .check { width: 32px; height: 32px; border-width: 2px; }
+.step .check svg { width: 18px; height: 18px; }
+.step .sname { flex: 1; min-width: 0; font-size: 15px; }
+.step.done .sname { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+.step .stat { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.step .stat.warn { color: var(--warn); font-weight: 600; }
+/* Goals tab: a summary on top, each goal folded to one card until tapped */
+.gsum { margin: 0 0 4px; }
+.gsum .bar { margin-top: 6px; }
+.gfold { font: inherit; color: var(--ink); text-align: left; background: none; border: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
+.gfold .top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; width: 100%; }
+.gfold .gmeta { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.gfold .chev { color: var(--muted); font-size: 13px; transition: transform .15s; display: inline-block; }
+.gfold[aria-expanded="true"] .chev { transform: rotate(90deg); }
+.gfold .em { margin-right: 6px; }
+.goal .next { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -300,7 +336,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- State ----------
-  const VERSION = "v1.9.0-web";
+  const VERSION = "v1.10.0-web";
   const ISSUES = "https://github.com/belipede/ascend-web/issues";
   const EMPTY = () => ({ v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], opens: {}, trialStart: null, savedAt: 0 });
   let FB = { col: null, list: [], open: false, kind: "bug", text: "", sent: "", err: "" };
@@ -321,6 +357,11 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     for (const x of [...o.habits, ...o.tasks]) if (x.part != null && !PARTS[x.part]) delete x.part;
     for (const x of [...o.goals, ...o.habits]) { if (x.color != null && !COLORS[x.color]) delete x.color; if (x.emoji != null && typeof x.emoji !== "string") delete x.emoji; }
     for (const g of o.goals) if (!g.id || !g.name || !(Number(g.target) > 0)) throw new Error("A goal is missing its id, name or target.");
+    // Goal steps (milestones) are optional. Goals without them are untouched; a step without a name is skipped.
+    for (const g of o.goals) if (g.milestones != null) {
+      if (!Array.isArray(g.milestones)) { delete g.milestones; continue; }
+      g.milestones = g.milestones.filter(m => m && typeof m === "object" && String(m.name ?? "").trim()).map((m, i) => ({ id: String(m.id || `m${i + 1}`), name: String(m.name).trim().slice(0, 80), due: keyOk(String(m.due)) ? m.due : null, done: !!m.done, doneOn: m.done && keyOk(String(m.doneOn)) ? m.doneOn : null }));
+    }
     for (const t of o.tasks) if (!t.id || !t.title) throw new Error("A task is missing its id or title.");
     for (const [hid, days] of Object.entries(o.logs)) for (const [k, v] of Object.entries(days)) if (!keyOk(k) || !["done", "rest"].includes(v)) throw new Error(`Bad log entry for ${hid} on ${k}.`);
     return { v: 1, goals: o.goals, habits: o.habits, tasks: o.tasks, logs: o.logs, entries: o.entries, started: !!o.started, opens: (o.opens && typeof o.opens === "object") ? o.opens : {}, trialStart: o.trialStart || null, savedAt: Number(o.savedAt) || 0 };
@@ -774,10 +815,10 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     const title = text.replace(/\s+/g, " ").trim() || String(raw || "").trim();
     return { title, due, priority, goalId, amount, part };
   }
-  function parseChips(q) {
+  function parseChips(q, pickers) {
     const g = q.goalId && goalById(q.goalId), t = today();
     const when = !q.due ? "Anytime" : q.due === t ? "Today" : q.due === addDays(t, 1) ? "Tomorrow" : fmtDay(q.due);
-    return [`<span class="chip">📅 ${when}</span>`, q.part ? `<span class="chip">🕑 ${PARTS[q.part]}</span>` : "", q.priority === 1 ? `<span class="chip warn">❗ High</span>` : q.priority === 3 ? `<span class="chip rest">Low</span>` : "",
+    return [pickers ? "" : `<span class="chip">📅 ${when}</span>`, q.part ? `<span class="chip">🕑 ${PARTS[q.part]}</span>` : "", pickers ? "" : q.priority === 1 ? `<span class="chip warn">❗ High</span>` : q.priority === 3 ? `<span class="chip rest">Low</span>` : "",
       g ? `<span class="chip" style="${cvars(goalColor(g))};background:color-mix(in srgb, var(--c) 14%, transparent);color:var(--ink)">${g.emoji ? esc(g.emoji) : "↑"} ${esc(g.name)} +${fmtNum(q.amount ?? 1)}</span>` : ""].join("");
   }
 
@@ -835,17 +876,39 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
       ${opts.manage ? `<button type="button" class="mini muted" data-act="editTask" data-id="${t.id}">Edit</button>` : ""}
     </div></div>`;
   }
+  // Steps: due text, and the next open one. Overdue steps are flagged.
+  function stepWhen(m) {
+    if (m.done) return m.doneOn ? `done ${shortDay(m.doneOn)}` : "done";
+    if (!m.due) return "";
+    const t = today();
+    return m.due < t ? `was due ${shortDay(m.due)}` : m.due === t ? "today" : m.due === addDays(t, 1) ? "tomorrow" : `by ${shortDay(m.due)}`;
+  }
+  const nextStep = g => (g.milestones || []).find(m => !m.done);
+  function stepsHtml(g) {
+    const ms = g.milestones || []; if (!ms.length) return "";
+    const done = ms.filter(m => m.done).length, t = today();
+    return `<div class="steps"><div class="sh"><span>Steps</span><span>${done} of ${ms.length} done</span></div>${ms.map(m => `<div class="step ${m.done ? "done" : ""}">
+      <button type="button" class="check" style="${cvars(goalColor(g))}" aria-pressed="${m.done}" aria-label="${esc(m.name)}, ${m.done ? "done" : "not done"}. Tap to change." data-act="toggleStep" data-id="${g.id}" data-step="${esc(m.id)}">${ICON_CHECK}</button>
+      <span class="sname">${esc(m.name)}</span>${stepWhen(m) ? `<span class="stat ${!m.done && m.due && m.due < t ? "warn" : ""}">${stepWhen(m)}</span>` : ""}</div>`).join("")}</div>`;
+  }
+  // On the Goals tab each goal is one tappable card; tapping opens its chart, steps and buttons (one at a time).
   function goalBlock(g, opts = {}) {
     const p = goalProgress(g), pct = Math.min(100, Math.round(p / g.target * 100)), ps = paceStatus(g, p);
     const linked = S.habits.filter(h => h.goalId === g.id).length + S.tasks.filter(t => t.goalId === g.id).length;
-    return `<div class="goal" style="${cvars(goalColor(g))}">
-      <div class="top"><span class="title" style="font-weight:700">${emojiOf(g)}${esc(g.name)}</span>${ps ? `<span class="paceword ${ps[0]}">${ps[1]}</span>` : ""}</div>
-      <div class="bar" role="progressbar" aria-label="${esc(g.name)} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
-      <div class="pace"><b style="color:var(--ink)">${ofTarget(g, p)}</b> · ${pct}%</div>
-      <div class="pace">${pace(g, p) || "No deadline, go at your own pace"}${opts.detail ? ` · ${linked} linked item${linked === 1 ? "" : "s"}` : ""}</div>
-      ${opts.detail && !g.archived ? (() => { const ser = goalSeries(g), pr = projection(g, ser); return trendSvg(g, ser) + (pr ? `<p class="hint" style="color:var(--ink)">${pr}</p>` : ""); })() : ""}
-      ${opts.detail ? `<div class="btns"><button type="button" class="mini" data-act="logGoal" data-id="${g.id}">Log progress</button><button type="button" class="mini muted" data-act="editGoal" data-id="${g.id}">Edit</button><button type="button" class="mini muted" data-act="archiveGoal" data-id="${g.id}">${g.archived ? "Unarchive" : "Archive"}</button>${g.archived ? `<button type="button" class="mini danger" data-act="askDeleteGoal" data-id="${g.id}">Delete</button>` : ""}</div>` : ""}
-    </div>`;
+    const ms = g.milestones || [], msDone = ms.filter(m => m.done).length, nx = nextStep(g), open = ui.openGoal === g.id;
+    const head = `<button type="button" class="gfold" data-act="toggleGoal" data-id="${g.id}" aria-expanded="${open}" aria-controls="gb-${g.id}">
+        <span class="top"><span class="title" style="font-weight:700">${emojiOf(g)}${esc(g.name)}</span><span>${ps ? `<span class="paceword ${ps[0]}">${ps[1]}</span> ` : ""}<span class="chev" aria-hidden="true">›</span></span></span>
+        <span class="bar" role="progressbar" aria-label="${esc(g.name)} progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" style="display:block;width:100%"><i style="width:${pct}%"></i></span>
+        <span class="gmeta"><span><b style="color:var(--ink)">${ofTarget(g, p)}</b> · ${pct}%</span>${ms.length ? `<span>${msDone}/${ms.length} steps</span>` : ""}</span>
+      </button>`;
+    if (!open) return `<div class="goal" style="${cvars(goalColor(g))}">${head}${nx && !g.archived ? `<div class="next">Next step: ${esc(nx.name)}${nx.due ? ` · ${stepWhen(nx)}` : ""}</div>` : ""}</div>`;
+    const ser = !g.archived && goalSeries(g), pr = ser && projection(g, ser);
+    return `<div class="goal" style="${cvars(goalColor(g))}">${head}<div id="gb-${g.id}" style="display:flex;flex-direction:column;gap:8px">
+      <div class="pace">${pace(g, p) || "No deadline, go at your own pace"} · ${linked} linked item${linked === 1 ? "" : "s"}</div>
+      ${ser ? trendSvg(g, ser) + (pr ? `<p class="hint" style="color:var(--ink)">${pr}</p>` : "") : ""}
+      ${stepsHtml(g)}
+      <div class="btns"><button type="button" class="mini" data-act="logGoal" data-id="${g.id}">Log progress</button><button type="button" class="mini muted" data-act="editGoal" data-id="${g.id}">${ms.length ? "Edit" : "Edit or add steps"}</button><button type="button" class="mini muted" data-act="archiveGoal" data-id="${g.id}">${g.archived ? "Unarchive" : "Archive"}</button>${g.archived ? `<button type="button" class="mini danger" data-act="askDeleteGoal" data-id="${g.id}">Delete</button>` : ""}</div>
+    </div></div>`;
   }
   function logForm(g) {
     return `<form class="card" data-form="log" data-id="${g.id}" style="border:0;padding:0">
@@ -1059,23 +1122,43 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
       <div><span class="hint" style="font-weight:600">Emoji (optional)</span><div class="emojis" role="radiogroup" aria-label="Emoji" style="margin-top:6px">${EMOJIS.map(e => `<button type="button" role="radio" aria-checked="${x.emoji === e}" data-act="pickEmoji" data-id="${e}">${e}</button>`).join("")}<input name="emoji" aria-label="Or type an emoji" maxlength="16" value="${esc(x.emoji)}" style="width:72px;min-height:40px;padding:6px 10px;font-size:20px;text-align:center"></div></div>`;
   }
   const formBtns = (label, del) => `<div class="btns"><button class="btn" type="submit">${label}</button><button class="btn ghost" type="button" data-act="closeForm">Cancel</button>${del || ""}</div>`;
+  const MAX_STEPS = 20;
+  function stepRow(m, i) {
+    return `<div class="msrow"><input type="hidden" name="ms-id" value="${esc(m.id || "")}">
+      <input name="ms-name" maxlength="80" placeholder="${i === 0 ? "First step, e.g. finish book 1" : "Next step"}" aria-label="Step ${i + 1}" value="${esc(m.name)}" autocomplete="off">
+      <span class="pills"><label class="pill${m.due ? " on" : ""}">📅 <span>${m.due ? shortDay(m.due) : "Date"}</span><input type="date" class="msdue" name="ms-due" aria-label="Deadline for this step (optional)" value="${esc(m.due)}"></label></span>
+      <button type="button" class="mini muted" data-act="removeStep" aria-label="Remove this step">✕</button></div>`;
+  }
   function goalForm(g) {
-    const e = !!g; g = g || {};
+    const e = !!g; g = g || { name: ui.draft?.name || "" };
+    const ms = g.milestones || [];
     return `${e ? "" : "<h2>New goal</h2>"}<form class="card" data-form="goal" data-id="${e ? g.id : ""}" data-autofocus${e ? ' style="border:0;padding:0"' : ""}>
       <label for="g-name">Goal<input id="g-name" name="name" required maxlength="80" placeholder="Read 24 books" value="${esc(g.name)}"></label>
       <div class="fields"><label for="g-target">Target<input id="g-target" name="target" type="number" inputmode="decimal" min="0.1" step="any" required placeholder="24" value="${esc(g.target)}"></label>
       <label for="g-unit">Unit<input id="g-unit" name="unit" maxlength="20" placeholder="books" value="${esc(g.unit)}"></label></div>
       <label for="g-deadline">Deadline (optional)<input id="g-deadline" name="deadline" type="date" value="${esc(g.deadline)}"></label>
+      <div class="pickrow"><span class="hint">Steps to get there (optional)</span>
+      <p class="hint" style="font-weight:400;margin:0">Break the goal into smaller wins. Each can have its own date.</p>
+      <div class="msl">${ms.map((m, i) => stepRow(m, i)).join("")}</div>
+      <button type="button" class="mini" style="align-self:flex-start" data-act="addStep"${ms.length >= MAX_STEPS ? " hidden" : ""}>＋ Add a step</button></div>
       ${lookPicker(e ? { color: g.color, emoji: g.emoji } : { color: COLOR_KEYS[S.goals.length % COLOR_KEYS.length] }, false)}
       ${formBtns(e ? "Save goal" : "Create goal", e ? `<button type="button" class="btn ghost" style="color:var(--warn)" data-act="askDeleteGoal" data-id="${g.id}">Delete</button>` : "")}</form>`;
   }
   function renderGoals() {
     const goals = S.goals.filter(g => !g.archived), arch = S.goals.filter(g => g.archived);
-    let h = goals.length ? `<div class="list">${goals.map(g => goalBlock(g, { detail: true })).join("")}</div>` : `<div class="list"><div class="empty">No goals yet. Pick something you would love to reach, like 24 books or 100 km. 🎯</div></div>`;
+    let h = "";
+    if (S.goals.length) {
+      const reached = S.goals.filter(g => goalProgress(g) >= Number(g.target)).length;
+      const overall = goals.length ? Math.round(goals.reduce((a, g) => a + Math.min(100, goalProgress(g) / g.target * 100), 0) / goals.length) : null;
+      const allMs = goals.flatMap(g => g.milestones || []), msDone = allMs.filter(m => m.done).length;
+      h += `<div class="summary gsum" role="group" aria-label="Goals summary"><div><b>${S.goals.length}</b><span>Goals set</span></div><div><b>${reached}</b><span>Completed</span></div><div><b>${overall == null ? "–" : overall + "%"}</b><span>Overall</span>${overall == null ? "" : `<span class="bar" aria-hidden="true" style="display:block"><i style="width:${overall}%"></i></span>`}</div></div>
+        <p class="hint" style="margin:8px 2px 12px">${goals.length} active${arch.length ? ` · ${arch.length} archived` : ""}${allMs.length ? ` · ${msDone} of ${allMs.length} steps done` : ""}. Tap a goal to see its chart and steps.</p>`;
+    }
+    h += goals.length ? `<div class="list">${goals.map(g => goalBlock(g, { detail: true })).join("")}</div>` : `<div class="list"><div class="empty">No goals yet. Pick something you would love to reach, like 24 books or 100 km. 🎯</div></div>`;
     h += confirmBox();
     h += `<div class="btns add"><button type="button" class="btn" data-act="openForm" data-form="goal">New goal</button></div>`;
     if (arch.length) h += archivedSection(arch.length, () => `<div class="list">${arch.map(g => goalBlock(g, { detail: true })).join("")}</div>`);
-    h += `<p class="hint" style="margin-top:14px">Progress counts each logged entry once: manual entries, plus linked habit check-ins and finished tasks at the amount you set on them. Archived goals keep their progress and leave Today.</p>`;
+    h += `<p class="hint" style="margin-top:14px">Progress counts each logged entry once: manual entries, plus linked habit check-ins and finished tasks at the amount you set on them. Steps are your own checklist and don't change the number. Archived goals keep their progress and leave Today.</p>`;
     return h;
   }
   function archivedSection(n, body) {
@@ -1159,12 +1242,40 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     return h;
   }
 
+  // ---------- Date and priority pickers (task forms and the Add sheet) ----------
+  const shortDay = k => parse(k).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  const duePresets = () => { const t = today(); return [[t, "Today"], [addDays(t, 1), "Tomorrow"], [addDays(weekStart(t), 7), "Next week"], ["", "No date"]]; };
+  function whenPicker(due, id) {
+    due = due || "";
+    const pre = duePresets(), custom = due && !pre.some(([k]) => k === due);
+    return `<div class="pickrow"><span class="hint" id="${id}-l">When</span><input type="hidden" name="due" value="${esc(due)}">
+      <div class="pills" role="radiogroup" aria-labelledby="${id}-l">${pre.map(([k, n]) => `<button type="button" role="radio" aria-checked="${k === due}" data-act="pickDue" data-id="${k}">${n}</button>`).join("")}
+      <label class="pill${custom ? " on" : ""}">📅 <span>${custom ? fmtDay(due) : "Pick a date"}</span><input type="date" class="duepick" id="${id}" aria-label="Pick a date" value="${esc(due)}"></label></div></div>`;
+  }
+  function priorityPicker(pr, id) {
+    pr = Number(pr) || 2;
+    return `<div class="pickrow"><span class="hint" id="${id}-l">Priority</span><input type="hidden" name="priority" value="${pr}">
+      <div class="pills" role="radiogroup" aria-labelledby="${id}-l">${[[3, "Low", "lo"], [2, "Normal", ""], [1, "❗ High", "hi"]].map(([v, n, c]) => `<button type="button" role="radio" class="${c}" aria-checked="${v === pr}" data-act="pickPr" data-id="${v}">${n}</button>`).join("")}</div></div>`;
+  }
+  function setDue(form, v) {
+    if (!form?.elements.due) return;
+    v = v || ""; form.elements.due.value = v;
+    form.querySelectorAll('[data-act="pickDue"]').forEach(b => b.setAttribute("aria-checked", String(b.dataset.id === v)));
+    const pill = form.querySelector(".duepick")?.closest("label.pill"), custom = v && !duePresets().some(([k]) => k === v);
+    if (pill) { pill.classList.toggle("on", !!custom); pill.querySelector("span").textContent = custom ? fmtDay(v) : "Pick a date"; pill.querySelector("input").value = v; }
+  }
+  function setPr(form, v) {
+    if (!form?.elements.priority) return;
+    form.elements.priority.value = String(v);
+    form.querySelectorAll('[data-act="pickPr"]').forEach(b => b.setAttribute("aria-checked", String(Number(b.dataset.id) === Number(v))));
+  }
+
   function taskForm(t) {
-    const e = !!t; t = t || { due: today(), priority: 2, amount: 1 };
+    const e = !!t, d = ui.draft || {}; t = t || { title: d.title || "", due: "due" in d ? d.due : today(), priority: d.priority || 2, goalId: d.goalId || "", amount: d.amount ?? 1, part: d.part || null };
     return `<h2>${e ? "Edit task" : "New task"}</h2><form class="card" data-form="task" data-id="${e ? t.id : ""}" data-autofocus>
       <label for="t-title">Task<input id="t-title" name="title" required maxlength="140" placeholder="Read 10 pages" value="${esc(t.title)}"></label>
-      <div class="fields"><label for="t-due">Due<input id="t-due" name="due" type="date" value="${esc(t.due)}"></label>
-      <label for="t-pr">Priority<select id="t-pr" name="priority">${[[2, "Normal"], [1, "High"], [3, "Low"]].map(([v, n]) => `<option value="${v}" ${Number(t.priority) === v ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>
+      ${whenPicker(t.due, "t-due")}
+      ${priorityPicker(t.priority, "t-pr")}
       <div class="fields"><label for="t-goal">Counts toward<select id="t-goal" name="goalId">${goalOptions(t.goalId || "")}</select></label>
       <label for="t-amt">Amount when done<input id="t-amt" name="amount" type="number" inputmode="decimal" step="any" min="0" value="${esc(t.goalId || !e ? t.amount || 1 : 1)}"></label></div>
       ${partSelect(t.part, "t-part")}
@@ -1234,10 +1345,12 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   function addSheet() {
     return `<h2>Add</h2><form class="card" data-form="quick" data-autofocus>
       <label for="qa2">New task<input id="qa2" name="title" placeholder="Call Sam fri evening !high #books" maxlength="140" autocomplete="off" enterkeyhint="done" data-parse></label>
-      <div class="parse" id="qa2-parse" aria-live="polite">${parseChips(parseQuick("", today()))}</div>
-      <p class="hint">Write a date (tomorrow, fri, 3 dec, in 5 days), a time of day (morning, evening), ! for high priority, and # plus a goal's name to link it.</p>
+      <div class="parse" id="qa2-parse" aria-live="polite"></div>
+      ${whenPicker(today(), "qa2-due")}
+      ${priorityPicker(2, "qa2-pr")}
+      <p class="hint">Or just type it: tomorrow, fri, 3 dec, morning, ! for high priority, # plus a goal's name to link it.</p>
       <div class="btns"><button class="btn" type="submit">Add task</button><button class="btn ghost" type="button" data-act="closeForm">Cancel</button></div>
-      <div class="moreadd"><button type="button" class="mini" data-act="openForm" data-form="habit">＋ New habit</button><button type="button" class="mini" data-act="openForm" data-form="goal">＋ New goal</button><button type="button" class="mini muted" data-act="openForm" data-form="task">Task with all options</button></div>
+      <div class="moreadd"><button type="button" class="mini" data-act="openForm" data-form="habit" data-carry="1">＋ New habit</button><button type="button" class="mini" data-act="openForm" data-form="goal" data-carry="1">＋ New goal</button><button type="button" class="mini muted" data-act="openForm" data-form="task" data-carry="1">Task with all options</button></div>
     </form>`;
   }
   function sheetBody() {
@@ -1265,8 +1378,11 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
   document.addEventListener("keydown", e => { if (e.key === "Escape" && (ui.form || ui.confirm)) { if (ui.confirm) ui.confirm = null; else ui.form = null; render(); } });
   document.addEventListener("input", e => {
     if (!e.target.matches("[data-parse]")) return;
-    const out = document.getElementById(e.target.id + "-parse");
-    if (out) out.innerHTML = parseChips(parseQuick(e.target.value, today()));
+    const out = document.getElementById(e.target.id + "-parse"), form = e.target.form, q = parseQuick(e.target.value, today());
+    const pickers = !!form?.elements.due;
+    if (out) out.innerHTML = parseChips(q, pickers);
+    // Typing a date or "!" moves the pickers; a pill you tapped stays until you type a different date or priority.
+    if (pickers) { const prev = form._q || { due: today(), priority: 2 }; if (prev.due !== q.due) setDue(form, q.due); if (prev.priority !== q.priority) setPr(form, q.priority); form._q = q; }
   });
 
   const TITLES = { today: ["Today", "Ascend"], goals: ["The big picture", "Goals"], habits: ["Small steps", "Habits"], tasks: ["To do", "Tasks"], more: ["Settings", "More"] };
@@ -1431,8 +1547,38 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     askDeleteHabit(id) { const x = S.habits.find(h => h.id === id); ui.confirm = { text: `Delete "${x?.name}" and its check-in history?${x?.goalId ? " Progress it added to its goal will be removed." : ""} To keep the history, archive it instead.`, yes: "Delete habit", run: () => { S.habits = S.habits.filter(h => h.id !== id); delete S.logs[id]; ui.detail = null; ui.form = null; save(); } }; },
     askDeleteGoal(id) { const g = goalById(id); ui.confirm = { text: `Delete goal "${g?.name}"? Linked habits and tasks stay; they just stop counting toward it. To keep it, archive it instead.`, yes: "Delete goal", run: () => { ui.form = null; S.goals = S.goals.filter(x => x.id !== id); S.entries = S.entries.filter(e => e.goalId !== id); S.habits.forEach(h => { if (h.goalId === id) h.goalId = null; }); S.tasks.forEach(t => { if (t.goalId === id) t.goalId = null; }); save(); } }; },
     logGoal(id) { ui.form = "log:" + id; },
-    openForm(_, el) { ui.form = el.dataset.form; draftDays = []; },
-    closeForm() { ui.form = null; },
+    openForm(_, el) {
+      // From the Add sheet, whatever was already typed comes along so it doesn't need typing again.
+      ui.draft = null;
+      const raw = el.dataset.carry ? (document.getElementById("qa2")?.value || "").trim() : "";
+      if (raw) {
+        const f = el.closest("form"), q = parseQuick(raw, today());
+        ui.draft = el.dataset.form === "task" ? { title: q.title, due: f?.elements.due ? (f.elements.due.value || null) : q.due, priority: Number(f?.elements.priority?.value) || q.priority, goalId: q.goalId, amount: q.amount ?? 1, part: q.part } : { name: raw };
+      }
+      ui.form = el.dataset.form; draftDays = [];
+    },
+    closeForm() { ui.form = null; ui.draft = null; },
+    pickDue(v, el) { setDue(el.closest("form"), v); return Promise.resolve(); },
+    pickPr(v, el) { setPr(el.closest("form"), Number(v)); return Promise.resolve(); },
+    addStep(_, el) {
+      const box = el.closest("form").querySelector(".msl"); if (!box) return Promise.resolve();
+      if (box.children.length >= MAX_STEPS) { el.hidden = true; return Promise.resolve(); }
+      box.insertAdjacentHTML("beforeend", stepRow({}, box.children.length));
+      box.lastElementChild.querySelector("input[name='ms-name']").focus();
+      if (box.children.length >= MAX_STEPS) el.hidden = true;
+      return Promise.resolve();
+    },
+    removeStep(_, el) { const f = el.closest("form"); el.closest(".msrow")?.remove(); const add = f?.querySelector('[data-act="addStep"]'); if (add) add.hidden = false; return Promise.resolve(); },
+    toggleStep(gid, el) {
+      const g = goalById(gid), m = g?.milestones?.find(x => x.id === el.dataset.step); if (!m) return;
+      const was = { done: m.done, doneOn: m.doneOn };
+      m.done = !m.done; m.doneOn = m.done ? today() : null; save();
+      const undo = () => { Object.assign(m, was); save(); };
+      const left = g.milestones.filter(x => !x.done).length;
+      if (m.done && !left) { confetti(); toast(`Every step of ${esc(g.name)} is done! 🎉`, undo); }
+      else toast(m.done ? `Step done: ${esc(m.name)} ✨ ${left} to go.` : `Unticked ${esc(m.name)}`, undo);
+    },
+    toggleGoal(id) { ui.openGoal = ui.openGoal === id ? null : id; },
     toggleDay(_, el) { const d = Number(el.dataset.day); draftDays = draftDays.includes(d) ? draftDays.filter(x => x !== d) : [...draftDays, d]; el.setAttribute("aria-pressed", String(draftDays.includes(d))); return Promise.resolve(); },
     confirmYes() { const c = ui.confirm; ui.confirm = null; c?.run(); },
     confirmNo() { ui.confirm = null; },
@@ -1509,7 +1655,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
 
   document.addEventListener("click", async e => {
     const tb = e.target.closest("nav.tabs button");
-    if (tb) { tab = tb.dataset.tab; ui.form = null; ui.confirm = null; ui.detail = null; ui.day = null; render(); window.scrollTo(0, 0); return; }
+    if (tb) { tab = tb.dataset.tab; ui.form = null; ui.draft = null; ui.confirm = null; ui.detail = null; ui.day = null; render(); window.scrollTo(0, 0); return; }
     const el = e.target.closest("[data-act]");
     if (!el || !actions[el.dataset.act]) return;
     e.preventDefault();
@@ -1578,9 +1724,11 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     if (kind === "quick") {
       const raw = String(fd.get("title") || "").trim(); if (!raw) return;
       const q = parseQuick(raw, today());
+      // The Add sheet has date and priority pickers; they already include anything typed.
+      if (f.elements.due) { q.due = String(fd.get("due") || "") || null; q.priority = Number(fd.get("priority")) || 2; }
       const x = { id: uid(), title: q.title, due: q.due, priority: q.priority, goalId: q.goalId, amount: q.goalId ? (q.amount ?? 1) : 0, part: q.part, done: false };
       S.tasks.push(x); S.started = true; save();
-      const fromSheet = ui.form === "add"; ui.form = null; render();
+      const fromSheet = ui.form === "add"; ui.form = null; ui.draft = null; render();
       const when = !x.due ? "with no date" : x.due === today() ? "for today" : x.due === addDays(today(), 1) ? "for tomorrow" : "for " + fmtDay(x.due);
       toast(`Added ${when} ✨`, () => { S.tasks = S.tasks.filter(y => y.id !== x.id); save(); });
       if (!fromSheet) document.getElementById("qa")?.focus();
@@ -1591,17 +1739,27 @@ html.sheet-open, html.sheet-open body { overflow: hidden; }
     const partOf = () => PARTS[fd.get("part")] ? String(fd.get("part")) : null;
     const look = () => ({ color: COLORS[fd.get("color")] ? String(fd.get("color")) : null, emoji: firstGrapheme(fd.get("emoji")) || null });
     const upsert = (list, fields, make) => { const x = editId && list.find(i => i.id === editId); if (x) Object.assign(x, fields); else if (!editId) list.push({ ...make(), ...fields }); };
-    if (kind === "goal") { const target = num(fd.get("target"), 0); const name = String(fd.get("name")).trim(); if (!(target > 0) || !name) return; upsert(S.goals, { ...look(), name, target, unit: String(fd.get("unit") || "").trim(), deadline: fd.get("deadline") || null }, () => ({ id: uid(), createdDay: today() })); }
+    if (kind === "goal") {
+      const target = num(fd.get("target"), 0); const name = String(fd.get("name")).trim(); if (!(target > 0) || !name) return;
+      // Steps keep their ticks by id; rows left blank are dropped.
+      const prev = new Map(((editId && goalById(editId)?.milestones) || []).map(m => [m.id, m])), ids = fd.getAll("ms-id"), dues = fd.getAll("ms-due");
+      const milestones = fd.getAll("ms-name").map((n, i) => [String(n).trim().slice(0, 80), i]).filter(([n]) => n).slice(0, MAX_STEPS).map(([n, i]) => { const o = prev.get(ids[i]); return { id: o ? o.id : uid(), name: n, due: /^\d{4}-\d{2}-\d{2}$/.test(dues[i] || "") ? dues[i] : null, done: !!o?.done, doneOn: o?.done ? o.doneOn || null : null }; });
+      const before = S.goals.length;
+      upsert(S.goals, { ...look(), name, target, unit: String(fd.get("unit") || "").trim(), deadline: fd.get("deadline") || null, milestones }, () => ({ id: uid(), createdDay: today() }));
+      if (S.goals.length > before) ui.openGoal = S.goals.at(-1).id;
+    }
     if (kind === "habit") { const gid = fd.get("goalId") || null, name = String(fd.get("name")).trim(); if (!name) return; const every = Math.max(2, Math.min(365, Math.round(Number(fd.get("every")) || 7))), times = Math.max(0, Math.min(every, Math.round(Number(fd.get("times")) || 0)));
       // Keep a count habit's period timing unless its length changes; otherwise periods start today.
       const old = editId && S.habits.find(i => i.id === editId), anchor = times ? (old && isCount(old) && Number(old.every) === every ? old.anchor : today()) : null;
       upsert(S.habits, { ...look(), part: partOf(), name, days: times ? [] : draftDays.slice(), times, every: times ? every : null, anchor, goalId: gid, amount: gid ? num(fd.get("amount"), 1) : 0 }, () => ({ id: uid(), startDay: today() })); }
     if (kind === "task") { const gid = fd.get("goalId") || null, title = String(fd.get("title")).trim(); if (!title) return; upsert(S.tasks, { part: partOf(), title, due: fd.get("due") || null, priority: Number(fd.get("priority")) || 2, goalId: gid, amount: gid ? num(fd.get("amount"), 1) : 0 }, () => ({ id: uid(), done: false })); }
     if (kind === "log") { const amount = Number(fd.get("amount")); if (!Number.isFinite(amount) || amount === 0) return; S.entries.push({ id: uid(), goalId: f.dataset.id, day: today(), amount, note: String(fd.get("note") || "").trim() }); }
-    S.started = true; ui.form = null; save(); render();
+    S.started = true; ui.form = null; ui.draft = null; save(); render();
   });
   document.addEventListener("input", e => { if (e.target.id === "imp") ui.importText = e.target.value; if (e.target.id === "gh-repo") ui.ghRepo = e.target.value; if (e.target.id === "gh-token") ui.ghToken = e.target.value; if (e.target.id === "fb-text") FB.text = e.target.value; });
   document.addEventListener("change", e => {
+    if (e.target.matches(".duepick")) { setDue(e.target.form, e.target.value); return; }
+    if (e.target.matches(".msdue")) { const v = e.target.value, pill = e.target.closest("label.pill"); pill.classList.toggle("on", !!v); pill.querySelector("span").textContent = v ? shortDay(v) : "Date"; return; }
     if (e.target.id !== "impf" || !e.target.files?.[0]) return;
     const r = new FileReader();
     r.onload = () => { ui.importText = String(r.result || ""); ui.importErr = ""; render(); };

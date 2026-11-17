@@ -29,6 +29,8 @@ jobs:
         run: node tests/sync-guard.js
       - name: Everyday fixes
         run: node tests/polish.js
+      - name: Task pickers, goal steps, Goals tab
+        run: node tests/goals-tasks.js "$RUNNER_TEMP/old.html"
       - name: Version was bumped (needed for phones to pick up the update)
         run: |
           old=$(grep -o 'const VERSION = "v[^"]*"' "$RUNNER_TEMP/old.html")
