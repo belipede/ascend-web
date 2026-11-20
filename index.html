@@ -336,13 +336,51 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- State ----------
-  const VERSION = "v1.10.0-web";
+  const VERSION = "v1.10.1-web";
   const ISSUES = "https://github.com/belipede/ascend-web/issues";
   const EMPTY = () => ({ v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], opens: {}, trialStart: null, savedAt: 0 });
   let FB = { col: null, list: [], open: false, kind: "bug", text: "", sent: "", err: "" };
   let S = null;
   let tab = "today";
   let ui = { form: null, confirm: null, importText: "", importErr: "", exportShown: false, msg: "", day: null, detail: null, calMonth: null, showArchived: false, scroll: false };
+
+  // Shopping data (optional, from v1.11). Cleaned in place so fields a newer version adds are kept.
+  // A bad shopping entry is dropped or reset; it is never a reason to reject the whole file.
+  const SHOP_CAT_KEYS = ["fruitveg", "dairy", "meat", "bakery", "pantry", "drinks", "snacks", "care", "home", "other"];
+  function cleanShop(sh) {
+    if (!sh || typeof sh !== "object" || Array.isArray(sh)) return null;
+    const isDay = v => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+    const fix = (o, k, ok) => { if (k in o && !ok(o[k])) delete o[k]; };
+    const numIn = (lo, hi) => v => typeof v === "number" && Number.isFinite(v) && v >= lo && v <= hi;
+    const txt = n => v => typeof v === "string" && v.length <= n;
+    const bool = v => typeof v === "boolean";
+    const seen = new Set();
+    sh.items = (Array.isArray(sh.items) ? sh.items : []).filter(i => i && typeof i === "object" && !Array.isArray(i) && typeof i.name === "string" && i.name.trim());
+    for (const [n, i] of sh.items.entries()) {
+      i.name = i.name.trim().slice(0, 80);
+      let id = typeof i.id === "string" && i.id ? i.id.slice(0, 40) : "s" + (n + 1);
+      while (seen.has(id)) id += "x";
+      seen.add(id); i.id = id;
+      if (!SHOP_CAT_KEYS.includes(i.cat)) i.cat = "other";
+      fix(i, "price", numIn(0, 1e7)); fix(i, "rate", numIn(0, 1000)); fix(i, "keeps", numIn(1, 3650)); fix(i, "stock", numIn(0, 1e5));
+      fix(i, "want", numIn(0, 1e4)); fix(i, "stockOn", isDay); fix(i, "boughtOn", isDay); fix(i, "skip", isDay);
+      fix(i, "staple", bool); fix(i, "low", bool); fix(i, "unit", txt(30)); fix(i, "note", txt(140));
+    }
+    sh.trips = (Array.isArray(sh.trips) ? sh.trips : []).filter(t => t && typeof t === "object" && isDay(t.day) && Array.isArray(t.lines));
+    for (const [n, t] of sh.trips.entries()) {
+      if (typeof t.id !== "string" || !t.id) t.id = "trip" + (n + 1);
+      fix(t, "where", txt(60));
+      t.lines = t.lines.filter(l => l && typeof l === "object" && typeof l.name === "string" && numIn(-1e7, 1e7)(l.cents));
+      for (const l of t.lines) { if (!SHOP_CAT_KEYS.includes(l.cat)) l.cat = "other"; fix(l, "qty", numIn(0, 1e4)); fix(l, "itemId", txt(40)); }
+    }
+    if (!sh.cart || typeof sh.cart !== "object" || Array.isArray(sh.cart)) sh.cart = {};
+    for (const k of Object.keys(sh.cart)) if (!seen.has(k)) delete sh.cart[k];
+    if (!sh.budget || typeof sh.budget !== "object" || Array.isArray(sh.budget)) sh.budget = {};
+    fix(sh.budget, "week", numIn(0, 1e8)); fix(sh.budget, "month", numIn(0, 1e8));
+    if (!(Number.isInteger(sh.shopDay) && sh.shopDay >= 0 && sh.shopDay <= 6)) sh.shopDay = 6;
+    return sh;
+  }
+  const shopCount = d => d && d.shop ? d.shop.items.length + d.shop.trips.length : 0;
 
   function validate(o) {
     if (!o || typeof o !== "object") throw new Error("That isn't an Ascend export.");
@@ -364,7 +402,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
     }
     for (const t of o.tasks) if (!t.id || !t.title) throw new Error("A task is missing its id or title.");
     for (const [hid, days] of Object.entries(o.logs)) for (const [k, v] of Object.entries(days)) if (!keyOk(k) || !["done", "rest"].includes(v)) throw new Error(`Bad log entry for ${hid} on ${k}.`);
-    return { v: 1, goals: o.goals, habits: o.habits, tasks: o.tasks, logs: o.logs, entries: o.entries, started: !!o.started, opens: (o.opens && typeof o.opens === "object") ? o.opens : {}, trialStart: o.trialStart || null, savedAt: Number(o.savedAt) || 0 };
+    return { v: 1, goals: o.goals, habits: o.habits, tasks: o.tasks, logs: o.logs, entries: o.entries, started: !!o.started, opens: (o.opens && typeof o.opens === "object") ? o.opens : {}, trialStart: o.trialStart || null, savedAt: Number(o.savedAt) || 0, ...(cleanShop(o.shop) ? { shop: o.shop } : {}) };
   }
 
   // ---------- Storage: account db when available, this-device cache always ----------
@@ -406,8 +444,8 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
   // download (the last 5). Each is its own localStorage key, separate from your data, and never synced or exported.
   const BAK = "ascend-bak:";
   const KEEP_DAILY = 7, KEEP_SAFETY = 5;
-  const countsOf = d => `${d.goals.length} goal${d.goals.length === 1 ? "" : "s"}, ${d.habits.length} habit${d.habits.length === 1 ? "" : "s"}, ${d.tasks.length} task${d.tasks.length === 1 ? "" : "s"}`;
-  const hasContent = d => !!(d && (d.goals.length || d.habits.length || d.tasks.length));
+  const countsOf = d => `${d.goals.length} goal${d.goals.length === 1 ? "" : "s"}, ${d.habits.length} habit${d.habits.length === 1 ? "" : "s"}, ${d.tasks.length} task${d.tasks.length === 1 ? "" : "s"}${d.shop?.items.length ? `, ${d.shop.items.length} shopping item${d.shop.items.length === 1 ? "" : "s"}` : ""}`;
+  const hasContent = d => !!(d && (d.goals.length || d.habits.length || d.tasks.length || shopCount(d)));
   function listBackups() {
     const out = [];
     try {
@@ -513,7 +551,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       setSync("Saved on this device");
     }
   }
-  const hasData = () => S && (S.goals.length || S.habits.length || S.tasks.length);
+  const hasData = () => S && (S.goals.length || S.habits.length || S.tasks.length || shopCount(S));
 
   // ---------- Sync to a private GitHub repo (optional) ----------
   // Off until a repo and token are entered in More. The settings have their own key and never go into an export.
@@ -568,7 +606,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       } else if (remote && hasContent(remote) && !hasData() && !gh.emptyOk) {
         // This phone is empty but GitHub has data: most likely the phone lost its data, not that you deleted
         // everything. Never upload an empty copy over it; ask instead (More shows "Use GitHub's copy").
-        if (cfg === gh) { gh.err = ""; gh.emptyRemote = { goals: remote.goals.length, habits: remote.habits.length, tasks: remote.tasks.length, at: remote.savedAt }; ghStore(); }
+        if (cfg === gh) { gh.err = ""; gh.emptyRemote = { goals: remote.goals.length, habits: remote.habits.length, tasks: remote.tasks.length, shop: shopCount(remote), at: remote.savedAt }; ghStore(); }
         return;
       } else if (remote ? S.savedAt > remote.savedAt : (hasData() || S.started)) {
         const sent = JSON.stringify(S, null, 1), at = S.savedAt;
@@ -1401,7 +1439,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       <p class="hint" style="color:var(--ink)">Syncing to <b>${esc(gh.repo)}</b>. Last synced: <b>${esc(when)}</b>.</p>
       ${navigator.onLine === false ? `<p class="hint">You're offline. Changes are saved on this phone and upload when you're back online.</p>` : ""}
       ${err ? `<p class="err">${esc(err)}</p>` : ""}
-      ${gh.emptyRemote ? `<p class="err">This phone has no goals, habits or tasks, but GitHub has ${gh.emptyRemote.goals} goals, ${gh.emptyRemote.habits} habits and ${gh.emptyRemote.tasks} tasks. To keep that safe, Ascend didn't upload this phone's empty copy.</p>
+      ${gh.emptyRemote ? `<p class="err">This phone has no goals, habits or tasks, but GitHub has ${gh.emptyRemote.goals} goals, ${gh.emptyRemote.habits} habits${gh.emptyRemote.shop ? `, ${gh.emptyRemote.tasks} tasks and ${gh.emptyRemote.shop} shopping entries` : ` and ${gh.emptyRemote.tasks} tasks`}. To keep that safe, Ascend didn't upload this phone's empty copy.</p>
         <div class="btns"><button type="button" class="btn" data-act="ghPull">Use GitHub's copy</button><button type="button" class="btn ghost" data-act="ghPushEmpty">Replace GitHub with this empty copy</button></div>` : ""}
       <div class="btns"><button type="button" class="btn ghost" data-act="ghNow">Sync now</button><button type="button" class="btn ghost" data-act="ghOff">Turn off sync</button></div>
       ${bak ? `<p class="hint">If a sync download replaced something you wanted, you can put back this phone's copy from just before the last download.</p><div class="btns"><button type="button" class="btn ghost" data-act="ghUndo">Put back this phone's copy</button></div>` : ""}</div>`;
