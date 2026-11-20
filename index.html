@@ -179,6 +179,35 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .paceword.behind { color: var(--warn); }
 .ghead { font-family: var(--font-body); display: flex; justify-content: flex-start; align-items: center; gap: 8px; margin: 22px 2px 8px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .ghead i { width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--line)); flex: none; }
+/* Shopping */
+.shophead { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; padding: 14px 16px; border-radius: var(--radius); background: linear-gradient(135deg, var(--sunny), var(--accent-soft)); }
+.shophead p { margin: 0; } .shophead .big { font-family: var(--font-display); font-weight: 700; font-size: 20px; }
+.shophead .r { text-align: right; font-size: 14px; color: var(--muted); } .shophead .r b { display: block; color: var(--ink); font-size: 17px; }
+.budget { margin-top: 10px; font-size: 13px; color: var(--muted); }
+.budget .two { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: color-mix(in srgb, var(--accent-bright) 16%, transparent); margin-top: 6px; }
+.budget .two i { display: block; height: 100%; } .budget .two i:first-child { background: var(--accent-bright); } .budget .two i + i { background: color-mix(in srgb, var(--accent-bright) 45%, transparent); }
+.budget .two.over i:first-child, .budget .two.over i + i { background: var(--warn); }
+.qty { color: var(--muted); font-weight: 600; }
+.row .sub .chip.auto { background: var(--rest-soft); color: var(--rest); }
+.row .sub .tip { color: var(--warn); }
+.check.cart { --c: var(--accent); }
+button.rowmain { flex: 1; min-width: 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; padding: 0; cursor: pointer; display: flex; align-items: center; gap: 12px; min-height: 44px; }
+.shopadd { display: flex; gap: 8px; margin-top: 14px; } .shopadd input { flex: 1; }
+.cartbar { position: fixed; left: 0; right: 0; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); z-index: 14; padding: 0 max(16px, env(safe-area-inset-left, 0px)) 8px; pointer-events: none; }
+.cartbar .in { pointer-events: auto; max-width: 528px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 10px 10px 16px; border-radius: 16px; background: var(--ink); color: var(--bg); box-shadow: 0 6px 20px rgba(0,0,0,.18); font-size: 14px; }
+.cartbar b { font-size: 16px; } .cartbar .btn { min-height: 44px; background: var(--accent-bright); color: #fff; }
+.days { margin-top: 6px; } .days .bar { height: 6px; } .days .bar.lo { --c: var(--warn); }
+.spendbig { font-family: var(--font-display); font-size: 28px; font-weight: 700; line-height: 1.1; margin: 2px 0 0; font-variant-numeric: tabular-nums; }
+.catrow { display: grid; grid-template-columns: 26px 1fr auto; gap: 4px 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.catrow:first-child { border-top: 0; } .catrow .bar { grid-column: 2 / 4; height: 6px; } .catrow b { font-variant-numeric: tabular-nums; }
+.step2 { display: flex; align-items: center; gap: 4px; flex: none; } .step2 button { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font: inherit; font-size: 20px; color: var(--accent); cursor: pointer; }
+.step2 input { width: 58px; text-align: center; font-weight: 700; padding: 6px 4px; min-height: 40px; }
+.pricein { width: 92px; flex: none; text-align: right; min-height: 40px; padding: 6px 8px; }
+.peek { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 8px 10px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 14px; }
+.peek .em { font-size: 22px; } .peek b { font-weight: 700; } .peek .w { color: var(--warn); font-weight: 600; } .peek button { margin-left: auto; flex: none; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid2 .card { gap: 4px; }
+.ghead .cnt { margin-left: auto; font-size: 11px; letter-spacing: 0; text-transform: none; font-weight: 600; }
 .ghead .em { font-size: 15px; letter-spacing: 0; }
 .row.slim { min-height: 56px; padding: 6px 14px 6px 8px; }
 .row.slim .title { font-weight: 500; }
@@ -336,7 +365,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- State ----------
-  const VERSION = "v1.10.1-web";
+  const VERSION = "v1.11.0-web";
   const ISSUES = "https://github.com/belipede/ascend-web/issues";
   const EMPTY = () => ({ v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], opens: {}, trialStart: null, savedAt: 0 });
   let FB = { col: null, list: [], open: false, kind: "bug", text: "", sent: "", err: "" };
@@ -1103,6 +1132,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
     const cs = !past && checkStatus();
     if (cs && cs.done && uiPrefs.checkSeen !== cs.start) h += `<p class="note"><span>Your 14-day check is finished: opened on ${cs.opens} days, goal progress on ${cs.goal}. See More for details.</span><button type="button" class="mini" data-act="seenCheck" style="min-height:32px;padding:4px 6px">OK</button></p>`;
     if (!past && exportDue()) h += `<p class="note"><span>It's been a week since your data was last exported. A copy in Notes or Files keeps it safe if this phone loses it.</span><span style="display:flex;gap:4px"><button type="button" class="mini" data-act="goExport" style="min-height:32px;padding:4px 6px">Export</button><button type="button" class="mini muted" data-act="snoozeExport" style="min-height:32px;padding:4px 6px">Later</button></span></p>`;
+    if (!past) h += shopPeek(t);
     h += dayStrip(d);
     if (past) h += `<p class="note"><span>Logging habits for <b>${fmtDay(d)}</b>.</span><button type="button" class="mini" data-act="pickDay" data-day="${t}" style="min-height:32px;padding:4px 6px">Back to today</button></p>`;
     if (goals.length && !past) h += goalStrip(goals);
@@ -1320,6 +1350,11 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       ${formBtns(e ? "Save task" : "Create task", e ? `${!t.done ? `<button type="button" class="btn ghost" data-act="moveTomorrow" data-id="${t.id}">Move to tomorrow</button>` : ""}<button type="button" class="btn ghost" style="color:var(--warn)" data-act="askDeleteTask" data-id="${t.id}">Delete</button>` : "")}</form>`;
   }
   function renderTasks() {
+    const shopOn = uiPrefs.tv === "shop";
+    const seg = `<div class="seg" role="group" aria-label="To do or shopping" style="margin-top:4px"><button type="button" data-act="tasksView" data-id="todo" aria-pressed="${!shopOn}">To do</button><button type="button" data-act="tasksView" data-id="shop" aria-pressed="${shopOn}">🛒 Shopping</button></div>`;
+    return seg + (shopOn ? renderShop() : renderTodo());
+  }
+  function renderTodo() {
     const open = S.tasks.filter(t => !t.dropped && !t.done).sort((a, b) => (a.due || "9999") < (b.due || "9999") ? -1 : (a.due || "9999") > (b.due || "9999") ? 1 : a.priority - b.priority);
     const done = S.tasks.filter(t => !t.dropped && t.done).slice(-10).reverse();
     let h = open.length ? `<div class="list">${open.map(t => taskRow(t, { manage: true, overdueActions: true })).join("")}</div>` : `<div class="list"><div class="empty">All clear. Nothing on your list. ✨</div></div>`;
@@ -1399,12 +1434,13 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
     const html = kind === "add" ? addSheet() : kind === "goal" ? (id ? (g ? `<h2>Edit goal</h2>${goalForm(g)}` : "") : goalForm(null))
       : kind === "log" ? (g ? `<h2>Log progress</h2><p class="hint">${esc(g.name)} · ${ofTarget(g, goalProgress(g))}</p>${logForm(g)}` : "")
       : kind === "habit" ? (id ? (h ? `<h2>Edit habit</h2>${habitForm(h)}` : "") : habitForm(null))
-      : kind === "task" ? (id ? (t ? taskForm(t) : "") : taskForm(null)) : "";
-    return html ? { key: "f:" + f, label: { add: "Add", goal: "Goal", log: "Log progress", habit: "Habit", task: "Task" }[kind], html } : null;
+      : kind === "task" ? (id ? (t ? taskForm(t) : "") : taskForm(null))
+      : kind === "item" ? (id ? (shopItem(id) ? itemForm(shopItem(id)) : "") : itemForm(null, ui.itemKind)) : kind === "count" ? countForm() : kind === "trip" ? tripForm() : "";
+    return html ? { key: "f:" + f, label: { add: "Add", goal: "Goal", log: "Log progress", habit: "Habit", task: "Task", item: "Shopping item", count: "Count stock", trip: "Finish shop" }[kind], html } : null;
   }
   function renderSheet() {
     const box = document.getElementById("sheet"), b = sheetBody();
-    document.getElementById("fab").hidden = tab === "more" || !!b || (!hasData() && !S.started);
+    document.getElementById("fab").hidden = tab === "more" || (tab === "tasks" && uiPrefs.tv === "shop" && !!view.querySelector(".cartbar")) || !!b || (!hasData() && !S.started);
     if (!b) { if (sheetKey) { box.innerHTML = ""; sheetKey = ""; document.documentElement.classList.remove("sheet-open"); } return; }
     if (b.key === sheetKey) return;
     sheetKey = b.key;
@@ -1445,6 +1481,246 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       ${bak ? `<p class="hint">If a sync download replaced something you wanted, you can put back this phone's copy from just before the last download.</p><div class="btns"><button type="button" class="btn ghost" data-act="ghUndo">Put back this phone's copy</button></div>` : ""}</div>`;
   }
 
+
+  // ---------- Shopping ----------
+  // Prices are whole cents (SGD). Stock maths uses DayKeys and daysBetween, never seconds / 86400.
+  const SHOP_CATS = { fruitveg: ["🥬", "Fruit & veg"], dairy: ["🥛", "Dairy & eggs"], meat: ["🍗", "Meat & fish"], bakery: ["🍞", "Bread"], pantry: ["🍚", "Pantry"], drinks: ["🧃", "Drinks"], snacks: ["🍫", "Snacks"], care: ["🧴", "Toiletries"], home: ["🧽", "Household"], other: ["🛍️", "Other"] };
+  const CAT_WORDS = { dairy: /milk|yog|cheese|butter|egg|cream/, fruitveg: /banana|apple|orange|grape|pear|berr|spinach|lettuce|kale|tomato|potato|onion|carrot|broccoli|cabbage|veg|fruit|avocado|cucumber|garlic|mango|kiwi/, meat: /chicken|beef|pork|fish|salmon|tuna|prawn|mince|meat|sausage|ham|bacon/, bakery: /bread|bun|bagel|wrap|croissant|loaf/, pantry: /rice|pasta|noodle|oil|sauce|coffee|tea|cereal|oat|flour|sugar|salt|beans|soup|honey|jam|peanut/, drinks: /water|juice|soda|100plus|coke|milo|drink|kombucha|beer/, snacks: /chip|choc|biscuit|snack|cookie|nut|bar\b|candy|sweet/, home: /detergent|tissue|toilet|sponge|bin bag|trash|dish|bleach|softener|foil|cling/, care: /tooth|shampoo|soap|razor|deodor|lotion|floss|sunscreen|conditioner|body wash|mouthwash/ };
+  const guessCat = n => { const l = n.toLowerCase(); for (const [k, re] of Object.entries(CAT_WORDS)) if (re.test(l)) return k; return "other"; };
+  const money = c => "$" + (Math.round(c) / 100).toFixed(2);
+  const about = c => "$" + Math.round(c / 100);
+  const toCents = v => { const n = parseFloat(String(v ?? "").replace(/[$,\s]/g, "")); return Number.isFinite(n) && n >= 0 && n < 1e5 ? Math.round(n * 100) : null; };
+  const shop = () => (S.shop ||= { items: [], trips: [], cart: {}, budget: {}, shopDay: 6 });
+  const shopItem = id => S.shop?.items.find(i => i.id === id);
+  const half = n => Math.round(n * 2) / 2;
+  const qtyTxt = n => { const h = half(n); return h === 0.5 ? "½" : Number.isInteger(h) ? String(h) : `${Math.floor(h)}½`; };
+  const wdName = k => parse(k).toLocaleDateString(undefined, { weekday: "short" });
+  const isTracked = it => Number(it.rate) > 0;
+  // The next shopping day on or after t (Saturday unless changed).
+  function nextShopDay(t) { const sd = S.shop?.shopDay ?? 6; let k = t; for (let i = 0; i < 7 && weekday(k) !== sd; i++) k = addDays(k, 1); return k; }
+  // Estimated stock now, and how many to buy on the next shop day so it lasts until the one after,
+  // without buying more than can be used before it goes off.
+  function stockPlan(it, t = today()) {
+    const perDay = (Number(it.rate) || 0) / 7;
+    const since = it.stockOn ? Math.max(0, daysBetween(it.stockOn, t)) : 0;
+    const now = Math.max(0, (Number(it.stock) || 0) - perDay * since);
+    const trip = nextShopDay(t);
+    const atTrip = Math.max(0, now - perDay * daysBetween(t, trip));
+    const runOut = perDay > 0 ? addDays(t, Math.floor(now / perDay + 1e-9)) : null;
+    const need = perDay * 7 - atTrip;
+    const usable = it.keeps ? Math.max(0, perDay * it.keeps - atTrip) : Infinity;
+    let buy = Math.round(Math.min(need, usable));
+    if (buy < 1 && need >= 0.5 && usable >= 0.5) buy = 1;
+    const short = Number.isFinite(usable) && need - usable >= 0.5;
+    const useBy = it.boughtOn && it.keeps && now >= 0.25 ? addDays(it.boughtOn, it.keeps) : null;
+    return { now, atTrip, runOut, need, buy: Math.max(0, buy), short, useBy, perDay, trip };
+  }
+  function whyOf(it, p) {
+    const t = today();
+    const left = p.now < 0.25 ? "None left" : `${qtyTxt(p.now)} left, ` + (p.runOut <= t ? "runs out today" : p.runOut === p.trip ? "runs out on shop day" : `runs out ${wdName(p.runOut)}`);
+    return esc(left) + (p.short ? ` · <span class="tip">keeps ${it.keeps} days, so just ${qtyTxt(p.buy)}</span>` : ` · you use ${qtyTxt(it.rate)} a week`);
+  }
+  // What goes on the next list: your own amount, else a stock suggestion, else a staple marked low.
+  function shopList(t = today()) {
+    if (!S.shop) return [];
+    const trip = nextShopDay(t), out = [];
+    for (const it of S.shop.items) {
+      if (it.want > 0) { out.push({ it, qty: it.want, auto: false, why: isTracked(it) ? whyOf(it, stockPlan(it, t)) : it.low ? "Marked running low" : esc(it.note || "Added by you"), p: isTracked(it) ? stockPlan(it, t) : null }); continue; }
+      if (isTracked(it)) { if (it.skip === trip) continue; const p = stockPlan(it, t); if (p.buy > 0) out.push({ it, qty: p.buy, auto: true, p, why: whyOf(it, p) }); }
+      else if (it.low) out.push({ it, qty: 1, auto: false, why: "Marked running low" });
+    }
+    return out;
+  }
+  const lineCents = l => Math.round(l.qty * (l.it.price || 0));
+  const tripTotal = tr => tr.lines.reduce((a, l) => a + (Number(l.cents) || 0), 0);
+  const spentBetween = (a, b) => (S.shop?.trips || []).filter(tr => tr.day >= a && tr.day <= b).reduce((x, tr) => x + tripTotal(tr), 0);
+  const monthStart = k => k.slice(0, 8) + "01";
+  const monthEnd = k => { const d = parse(monthStart(k)); d.setMonth(d.getMonth() + 1); return addDays(dk(d), -1); };
+  const monthName = k => parse(k).toLocaleDateString(undefined, { month: "long" });
+
+  function shopPeek(t) {
+    // Thursday to Sunday, when there's something to buy.
+    if (![4, 5, 6, 0].includes(weekday(t)) || !S.shop) return "";
+    const L = shopList(t); if (!L.length) return "";
+    const trip = nextShopDay(t), est = L.reduce((a, l) => a + lineCents(l), 0);
+    const soon = L.filter(l => l.p && l.p.runOut <= trip).length;
+    return `<div class="peek"><span class="em" aria-hidden="true">🛒</span><span><b>${trip === t ? "Shop today" : `Shop ${wdName(trip)}`}:</b> ${L.length} item${L.length === 1 ? "" : "s"}${est ? `, about ${about(est)}` : ""}${soon ? `<br><span class="w">${soon} will run out by then</span>` : ""}</span><button type="button" class="mini" data-act="goShop">See list</button></div>`;
+  }
+
+  function renderShop() {
+    const v = ui.shopView || "list";
+    const h = `<div class="seg" role="group" aria-label="Shopping view">${[["list", "List"], ["stock", "Stock"], ["spend", "Spending"]].map(([k, n]) => `<button type="button" data-act="shopView" data-id="${k}" aria-pressed="${v === k}">${n}</button>`).join("")}</div>`;
+    return h + (v === "stock" ? shopStock() : v === "spend" ? shopSpend() : shopListView());
+  }
+  function budgetLine(t, est) {
+    const b = S.shop?.budget || {}; if (!b.week) return "";
+    const spent = spentBetween(weekStart(t), addDays(weekStart(t), 6));
+    const pct = x => Math.min(100, x / b.week * 100), over = spent + est > b.week;
+    return `<div class="budget">This week: <b style="color:var(--ink)">${money(spent)}</b> spent + about ${about(est)} on this list = <b style="color:${over ? "var(--warn)" : "var(--ink)"}">${about(spent + est)}</b> of your ${about(b.week)} budget
+      <div class="two ${over ? "over" : ""}" aria-hidden="true"><i style="width:${pct(spent)}%"></i><i style="width:${Math.max(0, pct(spent + est) - pct(spent))}%"></i></div></div>`;
+  }
+  function shopRow(l, cart) {
+    const inC = !!cart[l.it.id];
+    return `<div class="row slim ${inC ? "done" : ""}"><button type="button" class="check cart" aria-pressed="${inC}" aria-label="${esc(l.it.name)}, ${inC ? "in cart" : "not in cart"}. Tap to change." data-act="shopTick" data-id="${l.it.id}">${ICON_CHECK}</button>
+      <button type="button" class="rowmain" data-act="openForm" data-form="item:${l.it.id}" aria-label="Change ${esc(l.it.name)}"><span class="main"><span class="title" style="display:block">${esc(l.it.name)}${l.qty !== 1 ? ` <span class="qty">×${qtyTxt(l.qty)}</span>` : ""}</span><span class="sub"><span>${l.why}</span>${l.auto ? `<span class="chip auto">suggested</span>` : ""}</span></span>
+      <span class="stat">${l.it.price ? money(lineCents(l)) : ""}</span></button></div>`;
+  }
+  function shopListView() {
+    const t = today(), trip = nextShopDay(t), L = shopList(t), cart = S.shop?.cart || {};
+    const est = L.reduce((a, l) => a + lineCents(l), 0);
+    let h = `<div class="shophead"><p><span class="eyebrow" style="display:block">Next shop</span><span class="big">${trip === t ? "Today" : fmtDay(trip)}</span></p><p class="r"><b>${L.length} item${L.length === 1 ? "" : "s"}</b>${est ? `about ${about(est)}` : ""}</p></div>`;
+    h += budgetLine(t, est);
+    if (!L.length) h += `<div class="list" style="margin-top:16px"><div class="empty">${S.shop?.items.length ? "Nothing to buy yet. Suggestions appear here as your stock runs down." : "Your list is empty. Add what you need below. For fresh food, add it in Stock and Ascend will tell you when to buy more."}</div></div>`;
+    for (const ck of Object.keys(SHOP_CATS)) {
+      const grp = L.filter(l => (l.it.cat || "other") === ck); if (!grp.length) continue;
+      const [em, name] = SHOP_CATS[ck];
+      h += `<h2 class="ghead"><span class="em">${em}</span>${name}</h2><div class="list">${grp.map(l => shopRow(l, cart)).join("")}</div>`;
+    }
+    h += `<form class="shopadd" data-form="shopquick"><label for="sq" style="flex:1"><span class="sr" hidden>Add a shopping item</span><input id="sq" name="q" placeholder="Add: toothpaste $4.50 x2" maxlength="100" autocomplete="off" enterkeyhint="done"></label><button class="btn" type="submit">Add</button></form>`;
+    if (L.some(l => l.auto)) h += `<p class="hint" style="margin-top:8px">Suggested items come from your stock and how fast you use things. Tap one to change the amount or skip it this week.</p>`;
+    const n = L.filter(l => cart[l.it.id]);
+    if (n.length) h += `<div class="cartbar"><div class="in"><span>In cart: ${n.length} of ${L.length}<br><b>${money(n.reduce((a, l) => a + lineCents(l), 0))}</b></span><button type="button" class="btn" data-act="openForm" data-form="trip">Finish shop</button></div></div>`;
+    return h;
+  }
+  function shopStock() {
+    const t = today(), its = S.shop?.items || [];
+    const fresh = its.filter(isTracked).map(it => ({ it, p: stockPlan(it, t) })).sort((a, b) => a.p.runOut < b.p.runOut ? -1 : a.p.runOut > b.p.runOut ? 1 : 0);
+    const cup = its.filter(i => !isTracked(i) && i.staple), rest = its.filter(i => !isTracked(i) && !i.staple);
+    let h = `<p class="hint" style="margin-top:12px">Ascend estimates what's left from how fast you use each thing. Count now and then and it learns your real pace.</p>`;
+    h += `<h2 class="ghead">Fresh and tracked<span class="cnt">${fresh.length}</span></h2>`;
+    h += fresh.length ? `<div class="list">${fresh.map(({ it, p }) => {
+      const daysLeft = p.perDay ? Math.floor(p.now / p.perDay + 1e-9) : 0, lo = p.runOut <= p.trip;
+      const off = p.useBy && p.useBy <= addDays(t, 2);
+      return `<div class="row slim" style="padding-left:14px"><button type="button" class="rowmain" data-act="openForm" data-form="item:${it.id}"><span class="main"><span class="title" style="display:block">${esc(it.name)}</span>
+        <span class="sub"><span>${p.now < 0.25 ? "None left" : `About ${qtyTxt(p.now)} left · ${daysLeft} day${daysLeft === 1 ? "" : "s"}`}</span>${off ? `<span class="tip">${p.useBy <= t ? "use today" : `use by ${wdName(p.useBy)}`}</span>` : ""}</span>
+        <span class="days" style="display:block"><span class="bar ${lo ? "lo" : ""}" style="display:block"><i style="width:${Math.min(100, daysLeft / 7 * 100)}%"></i></span></span></span>
+        <span class="stat ${p.buy ? "warn" : ""}">${it.want > 0 ? `On list ×${qtyTxt(it.want)}` : it.skip === p.trip ? "Skipped" : p.buy ? `Buy ${qtyTxt(p.buy)}` : "Enough"}</span></button></div>`;
+    }).join("")}</div>` : `<div class="list"><div class="empty">Nothing tracked yet. Add fresh food you buy every week, like milk, bread or fruit.</div></div>`;
+    h += `<div class="btns add">${fresh.length ? `<button type="button" class="btn" data-act="openForm" data-form="count">Count what's left</button>` : ""}<button type="button" class="btn ${fresh.length ? "ghost" : ""}" data-act="openForm" data-form="item" data-kind="track">New item</button></div>`;
+    if (cup.length) {
+      h += `<h2 class="ghead">Cupboard staples<span class="cnt">${cup.length}</span></h2><div class="list">${cup.map(it => `<div class="row slim" style="padding-left:14px"><button type="button" class="rowmain" data-act="openForm" data-form="item:${it.id}"><span class="main"><span class="title" style="display:block">${esc(it.name)}</span><span class="sub"><span>${SHOP_CATS[it.cat][1]}${it.price ? ` · last ${money(it.price)}` : ""}</span></span></span></button>
+        <div class="seg" role="group" aria-label="${esc(it.name)}" style="margin:0;flex:none"><button type="button" data-act="shopLow" data-id="${it.id}" data-v="0" aria-pressed="${!it.low}">OK</button><button type="button" data-act="shopLow" data-id="${it.id}" data-v="1" aria-pressed="${!!it.low}">Low</button></div></div>`).join("")}</div>`;
+      h += `<p class="hint" style="margin-top:8px">Staples aren't counted. Mark one Low and it goes on the next list.</p>`;
+    }
+    if (rest.length) {
+      h += `<button type="button" class="fold" data-act="toggleShopRest" aria-expanded="${!!ui.shopRest}">Other items you've bought (${rest.length}) ${ui.shopRest ? "⌃" : "›"}</button>`;
+      if (ui.shopRest) h += `<div class="list">${rest.map(it => `<div class="row slim" style="padding-left:14px"><button type="button" class="rowmain" data-act="openForm" data-form="item:${it.id}"><span class="main"><span class="title" style="display:block">${esc(it.name)}</span><span class="sub"><span>${SHOP_CATS[it.cat][1]}${it.price ? ` · last ${money(it.price)}` : ""}</span></span></span></button>${it.want > 0 ? `<span class="stat">On list</span>` : `<button type="button" class="mini" data-act="shopAgain" data-id="${it.id}">Add to list</button>`}</div>`).join("")}</div>`;
+    }
+    return h;
+  }
+  function shopSpend() {
+    const t = today(), b = S.shop?.budget || {};
+    const ws = weekStart(t), we = addDays(ws, 6), ms = monthStart(t), me = monthEnd(t);
+    const wk = spentBetween(ws, we), mo = spentBetween(ms, me), mname = monthName(t);
+    const per = ui.spendPer || "month";
+    const [a, z] = per === "week" ? [ws, we] : [ms, me];
+    const byCat = {}; for (const tr of S.shop?.trips || []) if (tr.day >= a && tr.day <= z) for (const l of tr.lines) byCat[l.cat] = (byCat[l.cat] || 0) + (Number(l.cents) || 0);
+    const cats = Object.entries(byCat).filter(([, v]) => v > 0).sort((x, y) => y[1] - x[1]), top = cats[0]?.[1] || 1;
+    let w4 = 0, weeks = 0; for (let i = 1; i <= 4; i++) { const x = spentBetween(addDays(ws, -7 * i), addDays(ws, -7 * i + 6)); w4 += x; if (x) weeks = i; }
+    const left = daysBetween(t, me);
+    let h = `<div class="grid2" style="margin-top:14px">
+      <div class="card"><span class="hint">This week</span><p class="spendbig">${money(wk)}</p>${b.week ? `<div class="bar" style="${wk > b.week ? "--c:var(--warn)" : ""}"><i style="width:${Math.min(100, wk / b.week * 100)}%"></i></div><span class="hint">of ${about(b.week)}</span>` : ""}${weeks ? `<span class="hint">avg ${about(w4 / 4)} a week</span>` : ""}</div>
+      <div class="card"><span class="hint">${mname}</span><p class="spendbig">${money(mo)}</p>${b.month ? `<div class="bar" style="${mo > b.month ? "--c:var(--warn)" : ""}"><i style="width:${Math.min(100, mo / b.month * 100)}%"></i></div><span class="hint">of ${about(b.month)}</span>` : ""}<span class="hint">${left} day${left === 1 ? "" : "s"} left</span></div></div>`;
+    h += `<div class="seg" role="group" aria-label="Spending period"><button type="button" data-act="spendPer" data-id="week" aria-pressed="${per === "week"}">This week</button><button type="button" data-act="spendPer" data-id="month" aria-pressed="${per === "month"}">${mname}</button></div>`;
+    h += `<h2>By category <small>${money(per === "week" ? wk : mo)}</small></h2><div class="card" style="gap:0;padding:6px 14px">${cats.map(([c, v]) => `<div class="catrow"><span>${SHOP_CATS[c][0]}</span><span>${SHOP_CATS[c][1]}</span><b>${money(v)}</b><div class="bar"><i style="width:${v / top * 100}%"></i></div></div>`).join("") || `<p class="hint" style="padding:10px 0">Nothing spent ${per === "week" ? "this week" : "this month"} yet. Shops you finish in the List show up here.</p>`}</div>`;
+    const trips = (S.shop?.trips || []).slice().sort((x, y) => x.day < y.day ? 1 : x.day > y.day ? -1 : 0);
+    if (trips.length) {
+      const shown = ui.allTrips ? trips : trips.slice(0, 8);
+      h += `<h2>Recent shops</h2><div class="list">${shown.map(tr => `<div class="row slim" style="padding-left:14px"><div class="main"><div class="title">${fmtDay(tr.day)}${tr.where ? ` · ${esc(tr.where)}` : ""}</div><div class="sub"><span>${tr.lines.map(l => esc(l.name)).slice(0, 4).join(", ")}${tr.lines.length > 4 ? ` +${tr.lines.length - 4}` : ""}</span></div></div><span class="stat" style="color:var(--ink);font-weight:600">${money(tripTotal(tr))}</span><button type="button" class="mini muted" data-act="askDelTrip" data-id="${tr.id}" aria-label="Delete shop on ${fmtDay(tr.day)}">Delete</button></div>`).join("")}</div>`;
+      if (trips.length > 8) h += `<button type="button" class="fold" data-act="toggleAllTrips">${ui.allTrips ? "Show fewer" : `Show all ${trips.length}`}</button>`;
+    }
+    h += confirmBox();
+    const sd = S.shop?.shopDay ?? 6;
+    h += `<h2>Budget and shop day</h2><form class="card" data-form="shopset">
+      <div class="grid2"><label for="bw">Weekly budget ($)<input id="bw" name="week" inputmode="decimal" placeholder="None" value="${b.week ? (b.week / 100).toFixed(0) : ""}"></label><label for="bm">Monthly budget ($)<input id="bm" name="month" inputmode="decimal" placeholder="None" value="${b.month ? (b.month / 100).toFixed(0) : ""}"></label></div>
+      <label for="sday">Usual shop day<select id="sday" name="shopDay">${[6, 0, 5, 1, 2, 3, 4].map(d => `<option value="${d}" ${d === sd ? "selected" : ""}>${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][d]}</option>`).join("")}</select></label>
+      <p class="hint">Budgets are optional: leave them empty to hide them. Prices are in SGD.</p>
+      <div class="btns"><button class="btn ghost" type="submit">Save</button></div></form>`;
+    return h;
+  }
+  // ---------- Shopping sheets ----------
+  function itemForm(it, kindHint) {
+    const kind = it ? (isTracked(it) ? "track" : it.staple ? "staple" : "once") : (kindHint || "once");
+    const cat = it?.cat || "other", t = today();
+    const p = it && isTracked(it) ? stockPlan(it, t) : null;
+    const cats = Object.entries(SHOP_CATS).map(([k, [em, n]]) => `<button type="button" role="radio" aria-checked="${k === cat}" data-act="pickIn" data-name="cat" data-id="${k}">${em} ${n}</button>`).join("");
+    const kinds = [["track", "Fresh, track stock"], ["staple", "Cupboard staple"], ["once", "Just this once"]].map(([k, n]) => `<button type="button" role="radio" aria-checked="${k === kind}" data-act="pickIn" data-name="kind" data-id="${k}">${n}</button>`).join("");
+    const stock = p ? half(p.now) : 0;
+    return `<h2>${it ? "Edit item" : "New item"}</h2><form class="card" data-form="item" ${it ? `data-id="${it.id}"` : "data-autofocus"}>
+      <label for="it-n">Name<input id="it-n" name="name" value="${esc(it?.name || ui.draft?.name || "")}" maxlength="80" autocomplete="off" required></label>
+      <div class="pickrow"><span class="hint" id="it-c">Category</span><input type="hidden" name="cat" value="${cat}"><div class="pills" role="radiogroup" aria-labelledby="it-c">${cats}</div></div>
+      <div class="grid2"><label for="it-p">Price each (SGD)<input id="it-p" name="price" inputmode="decimal" placeholder="0.00" value="${it?.price != null ? (it.price / 100).toFixed(2) : ""}"></label><label for="it-w">On next list<input id="it-w" name="want" inputmode="decimal" placeholder="${p ? (p.buy ? `Suggested: ${qtyTxt(p.buy)}` : "Not needed") : "0"}" value="${it?.want || (!it && kind !== "track" ? 1 : "")}"></label></div>
+      <div class="pickrow"><span class="hint" id="it-k">Type</span><input type="hidden" name="kind" value="${kind}"><div class="pills" role="radiogroup" aria-labelledby="it-k">${kinds}</div></div>
+      <div class="trackf" ${kind === "track" ? "" : "hidden"}>
+        <p class="hint" style="margin-bottom:8px">Ascend works out when to buy more and how many, so you don't run out or let it go off.</p>
+        <div class="grid2"><label for="it-r">You use about (a week)<input id="it-r" name="rate" inputmode="decimal" placeholder="e.g. 2" value="${it?.rate ?? ""}"></label><label for="it-kp">Keeps for (days)<input id="it-kp" name="keeps" inputmode="numeric" placeholder="e.g. 7" value="${it?.keeps ?? ""}"></label></div>
+        <label for="it-s" style="margin-top:10px">You have now<input id="it-s" name="stock" inputmode="decimal" placeholder="0" value="${p ? qtyTxt(stock).replace("½", ".5").replace(/^\.5/, "0.5") : ""}"></label>
+        ${p ? `<p class="hint" style="margin-top:8px">${p.buy ? `Suggestion: buy <b>${qtyTxt(p.buy)}</b> on ${wdName(p.trip)}.${p.short ? ` It keeps ${it.keeps} days, so more would go off before you finish it.` : ""}` : `You have enough until after ${fmtDay(p.trip)}.`}</p>` : ""}
+      </div>
+      <div class="btns"><button class="btn" type="submit">${it ? "Save" : "Add item"}</button><button class="btn ghost" type="button" data-act="closeForm">Cancel</button>
+        ${p && p.buy && !(it.want > 0) ? `<button class="btn ghost" type="button" data-act="shopSkip" data-id="${it.id}">${it.skip === p.trip ? "Don't skip" : "Skip this week"}</button>` : ""}
+        ${it ? `<button class="btn ghost" type="button" data-act="askDelItem" data-id="${it.id}" style="color:var(--warn)">Delete</button>` : ""}</div></form>`;
+  }
+  function countForm() {
+    const t = today(), its = (S.shop?.items || []).filter(isTracked);
+    const rows = its.map(it => { const v = half(stockPlan(it, t).now); return `<div class="row slim" style="padding-left:14px"><div class="main"><div class="title">${esc(it.name)}</div><div class="sub"><span>Ascend thinks ${qtyTxt(v)}</span></div></div>
+      <div class="step2"><button type="button" data-act="cntStep" data-id="-0.5" aria-label="Less ${esc(it.name)}">−</button><input name="n-${it.id}" inputmode="decimal" value="${v}" data-was="${v}" aria-label="${esc(it.name)} left"><button type="button" data-act="cntStep" data-id="0.5" aria-label="More ${esc(it.name)}">+</button></div></div>`; }).join("");
+    return `<h2>Count what's left</h2><form data-form="count"><p class="hint">Change only what's wrong. Halves are fine. Each count teaches Ascend how fast you really use things.</p><div class="list" style="margin-top:10px">${rows}</div>
+      <div class="btns" style="margin-top:14px"><button class="btn" type="submit">Save count</button><button class="btn ghost" type="button" data-act="closeForm">Cancel</button></div></form>`;
+  }
+  function tripForm() {
+    const t = today(), cart = S.shop?.cart || {}, L = shopList(t).filter(l => cart[l.it.id]);
+    if (!L.length) return "";
+    const tot = L.reduce((a, l) => a + lineCents(l), 0);
+    return `<h2>Finish shop</h2><form data-form="trip"><p class="hint">${fmtDay(t)}. Check the prices against your receipt; Ascend remembers them for next time.</p>
+      <label for="tr-w" style="margin-top:10px">Where (optional)<input id="tr-w" name="where" maxlength="60" value="${esc(S.shop?.lastWhere || "")}" autocomplete="off"></label>
+      <div class="list" style="margin-top:10px">${L.map(l => `<div class="row slim" style="padding-left:14px"><div class="main"><div class="title">${esc(l.it.name)}</div><div class="sub"><span>×${qtyTxt(l.qty)}${l.qty !== 1 && l.it.price ? ` · ${money(l.it.price)} each` : ""}</span></div></div><input class="pricein" name="c-${l.it.id}" inputmode="decimal" placeholder="0.00" value="${l.it.price ? (lineCents(l) / 100).toFixed(2) : ""}" aria-label="${esc(l.it.name)} total price"></div>`).join("")}</div>
+      <p class="hint" style="margin-top:10px">Estimated total ${money(tot)}. Saving adds what you paid to this week and ${monthName(t)}, adds what you bought to your stock, and leaves anything you didn't tick on the list.</p>
+      <div class="btns" style="margin-top:12px"><button class="btn" type="submit">Save shop</button><button class="btn ghost" type="button" data-act="closeForm">Keep shopping</button></div></form>`;
+  }
+  // Quick add: "toothpaste $4.50 x2". An item with the same name is put back on the list instead of duplicated.
+  function shopQuick(raw) {
+    let name = raw, price = null, qty = 1;
+    name = name.replace(/(?:^|\s)\$\s?(\d+(?:\.\d{1,2})?)(?=\s|$)/, (_, v) => { price = toCents(v); return " "; });
+    name = name.replace(/(?:^|\s)(?:x\s?(\d+(?:\.5)?)|(\d+(?:\.5)?)\s?x)(?=\s|$)/i, (_, a, b) => { qty = Number(a || b) || 1; return " "; });
+    name = name.replace(/\s+/g, " ").trim().slice(0, 80); if (!name) return null;
+    const sh = shop(), same = sh.items.find(i => i.name.toLowerCase() === name.toLowerCase());
+    if (same) { same.want = (same.want || 0) + qty; if (price != null) same.price = price; return { it: same, made: false }; }
+    const it = { id: uid(), name, cat: guessCat(name), want: qty, ...(price != null ? { price } : {}) };
+    sh.items.push(it); return { it, made: true };
+  }
+  function saveTrip(fd) {
+    const t = today(), sh = shop(), cart = sh.cart || {}, L = shopList(t).filter(l => cart[l.it.id]);
+    if (!L.length) return null;
+    const before = JSON.stringify(sh), where = String(fd.get("where") || "").trim().slice(0, 60);
+    const lines = L.map(l => { const c = toCents(fd.get("c-" + l.it.id)); return { itemId: l.it.id, name: l.it.name, cat: l.it.cat, qty: l.qty, cents: c ?? lineCents(l) }; });
+    sh.trips.push({ id: uid(), day: t, ...(where ? { where } : {}), lines });
+    if (where) sh.lastWhere = where;
+    for (const ln of lines) {
+      const it = shopItem(ln.itemId); if (!it) continue;
+      if (ln.cents > 0 && ln.qty > 0) it.price = Math.round(ln.cents / ln.qty);
+      if (isTracked(it)) { const p = stockPlan(it, t); it.stock = half(p.now) + ln.qty; it.stockOn = t; it.boughtOn = t; }
+      delete it.want; delete it.skip; delete it.low;
+      delete cart[it.id];
+    }
+    return { before, total: lines.reduce((a, l) => a + l.cents, 0) };
+  }
+  // A count resets the stock and nudges the weekly rate halfway toward what the count shows.
+  function saveCount(fd) {
+    const t = today(); let n = 0;
+    for (const it of (S.shop?.items || []).filter(isTracked)) {
+      const v = Number(fd.get("n-" + it.id)); if (!Number.isFinite(v) || v < 0) continue;
+      const was = half(stockPlan(it, t).now); if (Math.abs(v - was) < 0.01) continue;   // left as Ascend guessed
+      const days = it.stockOn ? daysBetween(it.stockOn, t) : 0;
+      if (days >= 3) {
+        const seen = Math.max(0, (Number(it.stock) || 0) - v) / days * 7;
+        it.rate = Math.max(0.25, Math.round(((Number(it.rate) || 0) + seen) / 2 * 4) / 4);
+      }
+      it.stock = v; it.stockOn = t; n++;
+    }
+    return n;
+  }
+
   function render() {
     if (!S) return;
     const [eb, hd] = TITLES[tab];
@@ -1453,6 +1729,10 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
     document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false"));
     if (LOCKED !== null) { document.getElementById("eyebrow").textContent = "Your data is safe"; document.getElementById("heading").textContent = "Ascend"; view.innerHTML = renderLocked(); renderSheet(); document.getElementById("fab").hidden = true; return; }
     if (!hasData() && tab === "today" && !S.started) { view.innerHTML = renderWelcome(); renderSheet(); return; }
+    const shopping = tab === "tasks" && uiPrefs.tv === "shop";
+    if (shopping) { document.getElementById("eyebrow").textContent = "Weekly shop"; document.getElementById("heading").textContent = "Shopping"; }
+    const fab = document.getElementById("fab");
+    fab.dataset.form = shopping ? "item" : "add"; fab.setAttribute("aria-label", shopping ? "Add a shopping item" : "Add a task, habit or goal");
     view.innerHTML = { today: renderToday, goals: renderGoals, habits: renderHabits, tasks: renderTasks, more: renderMore }[tab]();
     ui.pop = null;
     renderSheet();
@@ -1532,6 +1812,25 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
   const noteExport = () => { uiPrefs.lastExport = Date.now(); delete uiPrefs.exportSnooze; saveUiPrefs(); };
 
   const actions = {
+    tasksView(id) { uiPrefs.tv = id === "shop" ? "shop" : "todo"; saveUiPrefs(); ui.confirm = null; window.scrollTo(0, 0); },
+    shopView(id) { ui.shopView = id; ui.confirm = null; },
+    spendPer(id) { ui.spendPer = id; },
+    goShop() { tab = "tasks"; uiPrefs.tv = "shop"; saveUiPrefs(); ui.shopView = "list"; window.scrollTo(0, 0); },
+    shopTick(id) { const c = (shop().cart ||= {}); if (c[id]) delete c[id]; else c[id] = true; save(); },
+    shopLow(id, el) { const it = shopItem(id); if (!it) return; if (el.dataset.v === "1") it.low = true; else delete it.low; save(); },
+    shopAgain(id) { const it = shopItem(id); if (!it) return; it.want = 1; save(); toast(`${esc(it.name)} is on the list`); },
+    shopSkip(id) { const it = shopItem(id); if (!it) return; const trip = nextShopDay(today()); if (it.skip === trip) delete it.skip; else it.skip = trip; ui.form = null; save(); },
+    toggleShopRest() { ui.shopRest = !ui.shopRest; },
+    toggleAllTrips() { ui.allTrips = !ui.allTrips; },
+    pickIn(v, el) {
+      const f = el.closest("form"); f.elements[el.dataset.name].value = v;
+      el.closest(".pills").querySelectorAll("[role=radio]").forEach(b => b.setAttribute("aria-checked", String(b === el)));
+      if (el.dataset.name === "kind") f.querySelector(".trackf").hidden = v !== "track";
+      return Promise.resolve();
+    },
+    cntStep(d, el) { const inp = el.parentElement.querySelector("input"); inp.value = String(Math.max(0, half((Number(inp.value) || 0) + Number(d)))); return Promise.resolve(); },
+    askDelItem(id) { const it = shopItem(id); if (!it) return; ui.form = null; ui.confirm = { text: `Delete ${it.name}? Past shops that included it stay in your spending.`, yes: "Delete item", run: () => { S.shop.items = S.shop.items.filter(i => i.id !== id); delete S.shop.cart[id]; save(); } }; },
+    askDelTrip(id) { const tr = S.shop?.trips.find(x => x.id === id); if (!tr) return; ui.confirm = { text: `Delete the shop on ${fmtDay(tr.day)} (${money(tripTotal(tr))}) from your spending? Your stock isn't changed.`, yes: "Delete shop", run: () => { S.shop.trips = S.shop.trips.filter(x => x.id !== id); save(); } }; },
     template() { applyTemplate(); },
     blank() { S.started = true; save(); tab = "goals"; ui.form = "goal"; },
     toggleHabit(id, el) {
@@ -1593,7 +1892,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
         const f = el.closest("form"), q = parseQuick(raw, today());
         ui.draft = el.dataset.form === "task" ? { title: q.title, due: f?.elements.due ? (f.elements.due.value || null) : q.due, priority: Number(f?.elements.priority?.value) || q.priority, goalId: q.goalId, amount: q.amount ?? 1, part: q.part } : { name: raw };
       }
-      ui.form = el.dataset.form; draftDays = [];
+      ui.form = el.dataset.form; draftDays = []; ui.itemKind = el.dataset.kind || null;
     },
     closeForm() { ui.form = null; ui.draft = null; },
     pickDue(v, el) { setDue(el.closest("form"), v); return Promise.resolve(); },
@@ -1770,6 +2069,58 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       const when = !x.due ? "with no date" : x.due === today() ? "for today" : x.due === addDays(today(), 1) ? "for tomorrow" : "for " + fmtDay(x.due);
       toast(`Added ${when} ✨`, () => { S.tasks = S.tasks.filter(y => y.id !== x.id); save(); });
       if (!fromSheet) document.getElementById("qa")?.focus();
+      return;
+    }
+    if (kind === "shopquick") {
+      const raw = String(fd.get("q") || "").trim(); if (!raw) return;
+      const r = shopQuick(raw); if (!r) return;
+      S.started = true; save(); render();
+      toast(`Added ${esc(r.it.name)}${r.made ? ` to ${SHOP_CATS[r.it.cat][1]}` : ""}`, r.made ? () => { S.shop.items = S.shop.items.filter(i => i.id !== r.it.id); save(); } : null);
+      document.getElementById("sq")?.focus();
+      return;
+    }
+    if (kind === "trip") {
+      const r = saveTrip(fd); ui.form = null; if (!r) { render(); return; }
+      S.started = true; save(); render();
+      toast(`Shop saved: ${money(r.total)}. Stock updated.`, () => { S.shop = JSON.parse(r.before); save(); });
+      return;
+    }
+    if (kind === "count") {
+      const n = saveCount(fd); ui.form = null; save(); render();
+      toast(n ? `Stock updated for ${n} item${n === 1 ? "" : "s"}` : "Nothing changed");
+      return;
+    }
+    if (kind === "shopset") {
+      const b = shop().budget, w = toCents(fd.get("week")), m = toCents(fd.get("month"));
+      if (w) b.week = w; else delete b.week;
+      if (m) b.month = m; else delete b.month;
+      const sd = Number(fd.get("shopDay")); if (Number.isInteger(sd) && sd >= 0 && sd <= 6) shop().shopDay = sd;
+      save(); render(); toast("Saved");
+      return;
+    }
+    if (kind === "item") {
+      const name = String(fd.get("name") || "").trim().slice(0, 80); if (!name) return;
+      const sh = shop(), id = f.dataset.id, old = id && shopItem(id);
+      if (id && !old) { ui.form = null; render(); return; }
+      const it = old || { id: uid() };
+      const k = String(fd.get("kind")), price = toCents(fd.get("price")), want = Number(fd.get("want"));
+      it.name = name; it.cat = SHOP_CATS[fd.get("cat")] ? String(fd.get("cat")) : "other";
+      if (price != null && String(fd.get("price")).trim() !== "") it.price = price; else delete it.price;
+      if (Number.isFinite(want) && want > 0 && String(fd.get("want")).trim() !== "") it.want = Math.min(1e4, half(want) || 0.5); else delete it.want;
+      if (k === "track") {
+        const rate = Number(fd.get("rate")), keeps = Math.round(Number(fd.get("keeps"))), stock = Number(fd.get("stock"));
+        it.rate = Number.isFinite(rate) && rate > 0 ? Math.min(1000, rate) : (it.rate || 1);
+        if (Number.isFinite(keeps) && keeps >= 1 && String(fd.get("keeps")).trim() !== "") it.keeps = Math.min(3650, keeps); else delete it.keeps;
+        const was = old && isTracked(old) ? half(stockPlan(old, today()).now) : null;
+        const st = Number.isFinite(stock) && stock >= 0 ? stock : 0;
+        if (was === null || Math.abs(st - was) >= 0.01) { it.stock = st; it.stockOn = today(); }
+        delete it.staple; delete it.low;
+      } else {
+        delete it.rate; delete it.keeps; delete it.stock; delete it.stockOn; delete it.boughtOn; delete it.skip;
+        if (k === "staple") it.staple = true; else { delete it.staple; delete it.low; }
+      }
+      if (!old) sh.items.push(it);
+      S.started = true; ui.form = null; ui.draft = null; save(); render();
       return;
     }
     // Edit forms carry the item's id; new-item forms leave it empty.
