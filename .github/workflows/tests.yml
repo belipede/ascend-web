@@ -33,6 +33,8 @@ jobs:
         run: node tests/shop-data.js
       - name: Craving data safety
         run: node tests/crave-data.js
+      - name: Craving list
+        run: node tests/cravings.js
       - name: Shopping list
         run: node tests/shopping.js
       - name: Shopping list and stock links
