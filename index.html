@@ -209,6 +209,32 @@ button.rowmain { flex: 1; min-width: 0; font: inherit; color: inherit; text-alig
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .grid2 .card { gap: 4px; }
 .ghead .cnt { margin-left: auto; font-size: 11px; letter-spacing: 0; text-transform: none; font-weight: 600; }
+.cweek { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding: 12px 8px; border-radius: var(--radius); background: linear-gradient(135deg, var(--sunny), var(--warn-soft)); }
+.cweek p { margin: 0; flex: 1; text-align: center; } .cweek .big { display: block; font-family: var(--font-display); font-weight: 700; font-size: 19px; }
+.cweek .eyebrow { display: block; } .cweek .mini { font-size: 22px; min-width: 44px; } .cweek .mini[disabled] { opacity: .25; }
+.cadd { display: flex; gap: 8px; margin-top: 12px; }
+.cchips { display: flex; gap: 6px; overflow-x: auto; margin-top: 8px; padding-bottom: 2px; scrollbar-width: none; }
+.cchips button { flex: none; font: inherit; font-size: 13px; font-weight: 600; min-height: 36px; padding: 0 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.crow .em { font-size: 22px; width: 30px; text-align: center; flex: none; }
+.crow .lv { color: var(--warn); letter-spacing: 1px; }
+.crow .got { display: flex; gap: 2px; flex: none; } .crow .got .mini { padding: 6px 8px; min-height: 40px; }
+.chip.had { background: var(--warn-soft); color: var(--warn); }
+.sumcard { margin-top: 14px; padding: 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.sumcard h3 { margin: 0; font-family: var(--font-display); font-size: 18px; } .sumcard .eyebrow { display: block; margin-bottom: 2px; }
+.sumbig { display: flex; align-items: baseline; gap: 10px; margin: 10px 0 4px; } .sumbig b { font-family: var(--font-display); font-size: 40px; line-height: 1; }
+.sumbig span { color: var(--muted); font-size: 14px; } .sumbig .dn { color: var(--accent); font-weight: 600; } .sumbig .up { color: var(--warn); font-weight: 600; }
+.split { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: var(--line); margin: 10px 0 6px; }
+.split i { display: block; height: 100%; } .split .a { background: var(--accent-bright); } .split .b { background: var(--warn); }
+.legend { display: flex; gap: 14px; font-size: 13px; color: var(--muted); } .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+.sumsec { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); } .sumsec .lab { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.toprow { display: grid; grid-template-columns: 26px 1fr auto; gap: 2px 8px; align-items: center; padding: 5px 0; font-size: 15px; } .toprow small { color: var(--muted); font-size: 13px; }
+.slots { display: grid; grid-template-columns: 84px 1fr 22px; gap: 8px 10px; align-items: center; font-size: 14px; } .slots .bar { height: 8px; } .slots b { text-align: right; font-variant-numeric: tabular-nums; }
+.slots .bar.pk { --c: var(--warn); }
+.dcols { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; height: 70px; }
+.dcols div { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; font-size: 11px; color: var(--muted); font-weight: 600; }
+.dcols i { display: block; width: 100%; max-width: 28px; border-radius: 6px 6px 3px 3px; background: color-mix(in srgb, var(--warn) 70%, transparent); min-height: 3px; }
+.insight { margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--sunny); font-size: 14px; }
+.still { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 15px; } .still span:first-child { font-size: 20px; } .still .nm { flex: 1; } .still .mini { min-height: 40px; padding: 6px 8px; }
 .ghead .em { font-size: 15px; letter-spacing: 0; }
 .row.slim { min-height: 56px; padding: 6px 14px 6px 8px; }
 .row.slim .title { font-weight: 500; }
@@ -366,7 +392,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- State ----------
-  const VERSION = "v1.11.2-web";
+  const VERSION = "v1.11.3-web";
   const ISSUES = "https://github.com/belipede/ascend-web/issues";
   const EMPTY = () => ({ v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], opens: {}, trialStart: null, savedAt: 0 });
   let FB = { col: null, list: [], open: false, kind: "bug", text: "", sent: "", err: "" };
@@ -1162,7 +1188,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
     const cs = !past && checkStatus();
     if (cs && cs.done && uiPrefs.checkSeen !== cs.start) h += `<p class="note"><span>Your 14-day check is finished: opened on ${cs.opens} days, goal progress on ${cs.goal}. See More for details.</span><button type="button" class="mini" data-act="seenCheck" style="min-height:32px;padding:4px 6px">OK</button></p>`;
     if (!past && exportDue()) h += `<p class="note"><span>It's been a week since your data was last exported. A copy in Notes or Files keeps it safe if this phone loses it.</span><span style="display:flex;gap:4px"><button type="button" class="mini" data-act="goExport" style="min-height:32px;padding:4px 6px">Export</button><button type="button" class="mini muted" data-act="snoozeExport" style="min-height:32px;padding:4px 6px">Later</button></span></p>`;
-    if (!past) h += shopPeek(t);
+    if (!past) h += cravePeek(t) + shopPeek(t);
     h += dayStrip(d);
     if (past) h += `<p class="note"><span>Logging habits for <b>${fmtDay(d)}</b>.</span><button type="button" class="mini" data-act="pickDay" data-day="${t}" style="min-height:32px;padding:4px 6px">Back to today</button></p>`;
     if (goals.length && !past) h += goalStrip(goals);
@@ -1380,9 +1406,9 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       ${formBtns(e ? "Save task" : "Create task", e ? `${!t.done ? `<button type="button" class="btn ghost" data-act="moveTomorrow" data-id="${t.id}">Move to tomorrow</button>` : ""}<button type="button" class="btn ghost" style="color:var(--warn)" data-act="askDeleteTask" data-id="${t.id}">Delete</button>` : "")}</form>`;
   }
   function renderTasks() {
-    const shopOn = uiPrefs.tv === "shop";
-    const seg = `<div class="seg" role="group" aria-label="To do or shopping" style="margin-top:4px"><button type="button" data-act="tasksView" data-id="todo" aria-pressed="${!shopOn}">To do</button><button type="button" data-act="tasksView" data-id="shop" aria-pressed="${shopOn}">🛒 Shopping</button></div>`;
-    return seg + (shopOn ? renderShop() : renderTodo());
+    const tv = ["shop", "crave"].includes(uiPrefs.tv) ? uiPrefs.tv : "todo";
+    const seg = `<div class="seg" role="group" aria-label="To do, shopping or cravings" style="margin-top:4px">${[["todo", "To do"], ["shop", "🛒 Shopping"], ["crave", "😋 Cravings"]].map(([k, n]) => `<button type="button" data-act="tasksView" data-id="${k}" aria-pressed="${tv === k}">${n}</button>`).join("")}</div>`;
+    return seg + (tv === "shop" ? renderShop() : tv === "crave" ? renderCrave() : renderTodo());
   }
   function renderTodo() {
     const open = S.tasks.filter(t => !t.dropped && !t.done).sort((a, b) => (a.due || "9999") < (b.due || "9999") ? -1 : (a.due || "9999") > (b.due || "9999") ? 1 : a.priority - b.priority);
@@ -1465,8 +1491,8 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       : kind === "log" ? (g ? `<h2>Log progress</h2><p class="hint">${esc(g.name)} · ${ofTarget(g, goalProgress(g))}</p>${logForm(g)}` : "")
       : kind === "habit" ? (id ? (h ? `<h2>Edit habit</h2>${habitForm(h)}` : "") : habitForm(null))
       : kind === "task" ? (id ? (t ? taskForm(t) : "") : taskForm(null))
-      : kind === "item" ? (id ? (shopItem(id) ? itemForm(shopItem(id)) : "") : itemForm(null, ui.itemKind)) : kind === "count" ? countForm() : kind === "trip" ? tripForm() : "";
-    return html ? { key: "f:" + f, label: { add: "Add", goal: "Goal", log: "Log progress", habit: "Habit", task: "Task", item: "Shopping item", count: "Count stock", trip: "Finish shop" }[kind], html } : null;
+      : kind === "item" ? (id ? (shopItem(id) ? itemForm(shopItem(id)) : "") : itemForm(null, ui.itemKind)) : kind === "count" ? countForm() : kind === "trip" ? tripForm() : kind === "crave" ? (id ? (S.cravings?.list.find(c => c.id === id) ? craveForm(S.cravings.list.find(c => c.id === id)) : "") : craveForm(null)) : "";
+    return html ? { key: "f:" + f, label: { add: "Add", goal: "Goal", log: "Log progress", habit: "Habit", task: "Task", item: "Shopping item", count: "Count stock", trip: "Finish shop", crave: "Craving" }[kind], html } : null;
   }
   function renderSheet() {
     const box = document.getElementById("sheet"), b = sheetBody();
@@ -1567,6 +1593,105 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
   const monthStart = k => k.slice(0, 8) + "01";
   const monthEnd = k => { const d = parse(monthStart(k)); d.setMonth(d.getMonth() + 1); return addDays(dk(d), -1); };
   const monthName = k => parse(k).toLocaleDateString(undefined, { month: "long" });
+
+  // ---------- Cravings: log day by day, weeks run Sat to Fri, summary on Friday ----------
+  const CRAVE_CATS = { sweet: ["🍫", "Sweet"], savoury: ["🍟", "Savoury"], drink: ["🧋", "Drink"], meal: ["🍜", "A meal"], other: ["✨", "Other"] };
+  const CRAVE_WORDS = { drink: /tea|coffee|kopi|teh|milo|boba|bubble|coke|soda|juice|beer|latte|100plus/i, sweet: /choc|cake|ice ?cream|cookie|sweet|candy|donut|dessert|kueh|waffle|mochi|bingsu|tart|gummy/i, savoury: /chip|fries|crisps|nugget|popcorn|keropok|wings/i, meal: /mala|sushi|ramen|prata|nasi|burger|pizza|laksa|rice|noodle|mee|kfc|mcd|bbq|hotpot|steak|dim sum|korean/i };
+  const guessCrave = n => Object.keys(CRAVE_WORDS).find(k => CRAVE_WORDS[k].test(n)) || "other";
+  const cr = () => (S.cravings ||= { list: [] });
+  // Craving weeks run Saturday to Friday, so Friday's summary covers a whole week.
+  const cWeek = k => addDays(k, -((weekday(k) + 1) % 7));
+  const cWeekList = ws => (S.cravings?.list || []).filter(c => c.day >= ws && c.day <= addDays(ws, 6));
+  const SLOTS = [["morning", "Morning", 5, 12], ["afternoon", "Afternoon", 12, 17], ["evening", "Evening", 17, 21], ["late", "Late night", 21, 29]];
+  const slotOf = at => { let h = Number(String(at || "").slice(0, 2)); if (!at || !Number.isFinite(h)) return null; if (h < 5) h += 24; return (SLOTS.find(x => h >= x[2] && h < x[3]) || [null])[0]; };
+  const nowAt = () => { const d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
+  const fmtAt = at => { const [h, m] = at.split(":").map(Number); return `${(h % 12) || 12}:${pad(m)} ${h < 12 ? "am" : "pm"}`; };
+  const LEVELS = ["", "A little", "Quite a bit", "Really"];
+  const shortRange = ws => { const a = parse(ws), b = parse(addDays(ws, 6)), mo = d => d.toLocaleDateString("en-GB", { month: "short" }); return `Sat ${a.getDate()}${a.getMonth() === b.getMonth() ? "" : " " + mo(a)} – Fri ${b.getDate()} ${mo(b)}`; };
+  const sumWeek = t => weekday(t) === 5 ? cWeek(t) : [6, 0].includes(weekday(t)) ? cWeek(addDays(t, -2)) : null;   // Fri: this week; Sat/Sun: the week just ended
+
+  function craveStats(ws) {
+    const L = cWeekList(ws), P = cWeekList(addDays(ws, -7));
+    const had = L.filter(c => c.got === "had").length, skip = L.filter(c => c.got === "skip").length;
+    const by = {}; for (const c of L) { const k = c.name.toLowerCase(); const o = (by[k] ||= { name: c.name, cat: c.cat, n: 0, had: 0, skip: 0, last: c }); o.n++; if (c.got === "had") o.had++; if (c.got === "skip") o.skip++; if (c.day >= o.last.day) o.last = c; }
+    const tops = Object.values(by).sort((a, b) => b.n - a.n || (a.name < b.name ? -1 : 1));
+    const slots = Object.fromEntries(SLOTS.map(x => [x[0], 0])); for (const c of L) { const k = slotOf(c.at); if (k) slots[k]++; }
+    const days = [...Array(7)].map((_, i) => L.filter(c => c.day === addDays(ws, i)).length);
+    const cats = {}; for (const c of L) cats[c.cat] = (cats[c.cat] || 0) + 1;
+    return { L, P, had, skip, tops, slots, days, cats };
+  }
+  function craveSummary(ws, t) {
+    const st = craveStats(ws), n = st.L.length;
+    const done = addDays(ws, 6) < t, diff = n - st.P.length;
+    let h = `<div class="sumcard"><span class="eyebrow">${done ? "Friday summary" : weekday(t) === 5 ? "Your Friday summary" : "So far this week"}</span><h3>${shortRange(ws)}</h3>`;
+    if (!n) return h + `<p class="hint" style="margin-top:8px">No cravings logged this week.</p></div>`;
+    h += `<div class="sumbig"><b>${n}</b><span>craving${n === 1 ? "" : "s"}${st.P.length ? ` · <span class="${diff > 0 ? "up" : "dn"}">${diff === 0 ? "same as" : `${Math.abs(diff)} ${diff > 0 ? "more" : "fewer"} than`} last week</span>` : ""}</span></div>`;
+    const open = n - st.had - st.skip;
+    h += `<div class="split" aria-hidden="true"><i class="a" style="width:${st.skip / n * 100}%"></i><i class="b" style="width:${st.had / n * 100}%"></i></div>
+      <div class="legend"><span><i style="background:var(--accent-bright)"></i>Let go ${st.skip}</span><span><i style="background:var(--warn)"></i>Had it ${st.had}</span>${open ? `<span><i style="background:var(--line)"></i>Not decided ${open}</span>` : ""}</div>`;
+    h += `<div class="sumsec"><p class="lab">Top cravings</p>${st.tops.slice(0, 4).map(o => `<div class="toprow"><span>${CRAVE_CATS[o.cat][0]}</span><span>${esc(o.name)} <small>${o.had ? `· had it${o.had === o.n ? (o.n === 1 ? "" : " every time") : ` ${o.had} of ${o.n}`}` : o.skip === o.n ? "· let it go" : o.skip ? `· let it go ${o.skip} of ${o.n}` : ""}</small></span><b>×${o.n}</b></div>`).join("")}</div>`;
+    const pk = Math.max(...Object.values(st.slots)), pkKey = Object.keys(st.slots).find(k => st.slots[k] === pk);
+    h += `<div class="sumsec"><p class="lab">When they hit</p><div class="slots">${SLOTS.map(([k, name]) => `<span>${name}</span><div class="bar ${k === pkKey ? "pk" : ""}"><i style="width:${pk ? st.slots[k] / pk * 100 : 0}%"></i></div><b>${st.slots[k]}</b>`).join("")}</div>`;
+    const dm = Math.max(1, ...st.days);
+    h += `<div class="dcols" style="margin-top:14px" aria-label="Cravings per day">${st.days.map((v, i) => `<div><i style="height:${v / dm * 46}px"></i>${DAY_LETTERS[weekday(addDays(ws, i))]}</div>`).join("")}</div>`;
+    const cat = Object.entries(st.cats).sort((a, b) => b[1] - a[1])[0];
+    const pName = SLOTS.find(x => x[0] === pkKey)[1].toLowerCase();
+    h += `<p class="insight">💡 ${pk / n >= 0.4 ? `Most of your cravings came ${pkKey === "late" ? "late at night" : `in the ${pName}`} (${pk} of ${n}).` : "Your cravings were spread across the day."} ${cat[1] / n >= 0.4 ? `Mostly ${CRAVE_CATS[cat[0]][1].toLowerCase().replace(/^a /, "")}${cat[0] === "drink" ? "s" : ""} (${cat[1]}).` : ""}${pkKey === "late" && pk / n >= 0.4 ? " An earlier dinner or a snack you've planned might help." : ""}</p></div>`;
+    // Still wanted: things you haven't had or let go of. Shop-able ones can go on the list; a meal can become a plan.
+    const still = st.tops.filter(o => !o.had && o.last.got !== "skip");
+    if (still.length && !done) h += `<h2 class="ghead">Still wanting it?<span class="cnt">${still.length}</span></h2><div class="list" style="padding:4px 14px">${still.slice(0, 4).map(o => {
+      const shopable = ["sweet", "savoury", "drink"].includes(o.cat), onList = S.shop?.items.some(i => i.name.toLowerCase() === o.name.toLowerCase() && i.want > 0);
+      return `<div class="still"><span>${CRAVE_CATS[o.cat][0]}</span><span class="nm">${esc(o.name)}</span>${shopable ? (onList ? `<span class="chip">On shop list</span>` : `<button type="button" class="mini" data-act="craveShop" data-id="${o.last.id}">🛒 Add to Sat's shop</button>`) : `<button type="button" class="mini" data-act="cravePlan" data-id="${o.last.id}">📅 Plan it for Sat</button>`}</div>`; }).join("")}</div>`;
+    return h;
+  }
+  function craveRow(c) {
+    const [em] = CRAVE_CATS[c.cat] || CRAVE_CATS.other;
+    return `<div class="row slim crow"><span class="em" aria-hidden="true">${em}</span><button type="button" class="rowmain" data-act="openForm" data-form="crave:${c.id}" aria-label="Change ${esc(c.name)}"><span class="main"><span class="title" style="display:block">${esc(c.name)}</span><span class="sub"><span>${c.wk ? "This week" : fmtAt(c.at)}${c.level ? ` · <span class="lv">${"●".repeat(c.level)}${"○".repeat(3 - c.level)}</span>` : ""}</span>${c.got === "had" ? `<span class="chip had">had it</span>` : c.got === "skip" ? `<span class="chip">let it go</span>` : ""}${c.note ? `<span>${esc(c.note)}</span>` : ""}</span></span></button>
+      ${c.got ? "" : `<span class="got"><button type="button" class="mini" data-act="craveGot" data-id="${c.id}" data-v="skip">Let go</button><button type="button" class="mini muted" data-act="craveGot" data-id="${c.id}" data-v="had">Had it</button></span>`}</div>`;
+  }
+  function renderCrave() {
+    const t = today(), cur = cWeek(t), ws = ui.cw && ui.cw <= cur ? ui.cw : cur, isCur = ws === cur;
+    const L = cWeekList(ws), first = (S.cravings?.list || []).reduce((a, c) => c.day < a ? c.day : a, cur);
+    let h = `<div class="cweek"><button type="button" class="mini" data-act="craveWeek" data-id="${addDays(ws, -7)}" aria-label="Previous week" ${ws <= cWeek(first) ? "disabled" : ""}>‹</button><p><span class="eyebrow">${isCur ? "This week" : ws === addDays(cur, -7) ? "Last week" : "Week"}</span><span class="big">${shortRange(ws)}</span><span class="hint">${L.length} craving${L.length === 1 ? "" : "s"}</span></p><button type="button" class="mini" data-act="craveWeek" data-id="${addDays(ws, 7)}" aria-label="Next week" ${isCur ? "disabled" : ""}>›</button></div>`;
+    if (isCur) {
+      h += `<form class="cadd" data-form="cravequick"><label for="cq" style="flex:1"><span class="sr" hidden>What are you craving?</span><input id="cq" name="q" placeholder="Craving something? e.g. bubble tea" maxlength="80" autocomplete="off" enterkeyhint="done"></label><button class="btn" type="submit">Log</button></form>`;
+      const recent = []; for (const c of (S.cravings?.list || []).slice().reverse()) if (!recent.some(r => r.name.toLowerCase() === c.name.toLowerCase())) recent.push(c);
+      if (recent.length) h += `<div class="cchips" aria-label="Log again">${recent.slice(0, 8).map(c => `<button type="button" data-act="craveAgain" data-id="${c.id}">${CRAVE_CATS[c.cat][0]} ${esc(c.name)}</button>`).join("")}</div>`;
+    }
+    const sw = sumWeek(t);
+    if (!isCur || sw === ws) h += craveSummary(ws, t);
+    else if (L.length) h += `<p class="hint" style="margin-top:10px">Your summary for this week arrives on Friday.</p>`;
+    const wk = L.filter(c => c.wk);
+    if (wk.length) h += `<h2 class="ghead">Wanting this week<span class="cnt">${wk.length}</span></h2><div class="list">${wk.map(craveRow).join("")}</div>`;
+    for (let i = 6; i >= 0; i--) {
+      const d = addDays(ws, i); if (d > t) continue;
+      const grp = L.filter(c => !c.wk && c.day === d).sort((a, b) => a.at < b.at ? 1 : -1); if (!grp.length) continue;
+      h += `<h2 class="ghead">${d === t ? "Today" : d === addDays(t, -1) ? "Yesterday" : fmtDay(d)}<span class="cnt">${grp.length}</span></h2><div class="list">${grp.map(craveRow).join("")}</div>`;
+    }
+    if (!L.length) h += `<div class="list" style="margin-top:16px"><div class="empty">${isCur ? "Nothing logged this week. When a craving hits, type it above. On Friday you'll get a summary of what you craved, when, and how often you let it go." : "Nothing logged that week."}</div></div>`;
+    return h + confirmBox();
+  }
+  function cravePeek(t) {
+    const ws = sumWeek(t); if (!ws || !S.cravings) return "";
+    const st = craveStats(ws), n = st.L.length; if (!n) return "";
+    return `<div class="peek"><span class="em" aria-hidden="true">😋</span><span><b>${weekday(t) === 5 ? "Your craving week" : "Last week's cravings"}:</b> ${n}, and you let ${st.skip} go<br><span style="color:var(--muted)">Top: ${esc(st.tops[0].name)} ×${st.tops[0].n}</span></span><button type="button" class="mini" data-act="goCrave">See summary</button></div>`;
+  }
+  function craveForm(c) {
+    const e = !!c; c = c || { name: ui.draft?.name || "", cat: guessCrave(ui.draft?.name || ""), level: 2 };
+    const pill = (name, cur, opts) => `<input type="hidden" name="${name}" value="${cur ?? ""}"><div class="pills" role="radiogroup">${opts.map(([k, n]) => `<button type="button" role="radio" aria-checked="${String(k) === String(cur ?? "")}" data-act="pickIn" data-name="${name}" data-id="${k}">${n}</button>`).join("")}</div>`;
+    return `<h2>${e ? "Edit craving" : "Log a craving"}</h2><form class="card" data-form="crave" ${e ? `data-id="${c.id}"` : "data-autofocus"}>
+      <label for="cr-n">What are you craving?<input id="cr-n" name="name" value="${esc(c.name)}" maxlength="80" autocomplete="off" required placeholder="Mala, bubble tea, chocolate…"></label>
+      <div class="pickrow"><span class="hint">Kind</span>${pill("cat", c.cat, Object.entries(CRAVE_CATS).map(([k, [em, n]]) => [k, `${em} ${n}`]))}</div>
+      <div class="pickrow"><span class="hint">How strong</span>${pill("level", c.level, [[1, "A little"], [2, "Quite a bit"], [3, "Really"]])}</div>
+      <div class="pickrow"><span class="hint">When</span>${pill("wk", c.wk ? 1 : 0, [[0, e && !c.wk ? `${c.day === today() ? "Today" : fmtDay(c.day)}, ${fmtAt(c.at)}` : "Right now"], [1, "Sometime this week"]])}</div>
+      <div class="pickrow"><span class="hint">Did you have it?</span>${pill("got", c.got || "", [["", "Not yet"], ["skip", "Let it go"], ["had", "Had it"]])}</div>
+      <label for="cr-note">Note (optional)<input id="cr-note" name="note" value="${esc(c.note)}" maxlength="140" placeholder="e.g. after a long day, saw an ad" autocomplete="off"></label>
+      <div class="btns"><button class="btn" type="submit">${e ? "Save" : "Log it"}</button><button class="btn ghost" type="button" data-act="closeForm">Cancel</button>${e ? `<button class="btn ghost" type="button" data-act="craveDel" data-id="${c.id}" style="color:var(--warn)">Delete</button>` : ""}</div></form>`;
+  }
+  function logCrave(name, extra = {}) {
+    const c = { id: uid(), name: name.slice(0, 80), cat: guessCrave(name), day: today(), at: nowAt(), level: 2, ...extra };
+    cr().list.push(c); S.started = true; save(); return c;
+  }
 
   function shopPeek(t) {
     // Thursday to Sunday, when there's something to buy.
@@ -1809,9 +1934,11 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
     if (LOCKED !== null) { document.getElementById("eyebrow").textContent = "Your data is safe"; document.getElementById("heading").textContent = "Ascend"; view.innerHTML = renderLocked(); renderSheet(); document.getElementById("fab").hidden = true; return; }
     if (!hasData() && tab === "today" && !S.started) { view.innerHTML = renderWelcome(); renderSheet(); return; }
     const shopping = tab === "tasks" && uiPrefs.tv === "shop";
+    const craving = tab === "tasks" && uiPrefs.tv === "crave";
     if (shopping) { document.getElementById("eyebrow").textContent = "Weekly shop"; document.getElementById("heading").textContent = "Shopping"; }
+    if (craving) { document.getElementById("eyebrow").textContent = "Day by day"; document.getElementById("heading").textContent = "Cravings"; }
     const fab = document.getElementById("fab");
-    fab.dataset.form = shopping ? "item" : "add"; fab.setAttribute("aria-label", shopping ? "Add a shopping item" : "Add a task, habit or goal");
+    fab.dataset.form = shopping ? "item" : craving ? "crave" : "add"; fab.setAttribute("aria-label", shopping ? "Add a shopping item" : craving ? "Log a craving" : "Add a task, habit or goal");
     view.innerHTML = { today: renderToday, goals: renderGoals, habits: renderHabits, tasks: renderTasks, more: renderMore }[tab]();
     ui.pop = null;
     renderSheet();
@@ -1891,7 +2018,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
   const noteExport = () => { uiPrefs.lastExport = Date.now(); delete uiPrefs.exportSnooze; saveUiPrefs(); };
 
   const actions = {
-    tasksView(id) { uiPrefs.tv = id === "shop" ? "shop" : "todo"; saveUiPrefs(); ui.confirm = null; window.scrollTo(0, 0); },
+    tasksView(id) { uiPrefs.tv = ["shop", "crave"].includes(id) ? id : "todo"; saveUiPrefs(); ui.confirm = null; window.scrollTo(0, 0); },
     shopView(id) { ui.shopView = id; ui.confirm = null; },
     spendPer(id) { ui.spendPer = id; },
     goShop() { tab = "tasks"; uiPrefs.tv = "shop"; saveUiPrefs(); ui.shopView = "list"; window.scrollTo(0, 0); },
@@ -1911,6 +2038,13 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
     shopNoTrack(id) { const it = shopItem(id); if (!it) return; it.noTrack = true; save(); },
     shopAgain(id) { const it = shopItem(id); if (!it) return; it.want = 1; save(); toast(`${esc(it.name)} is on the list`); },
     shopSkip(id) { const it = shopItem(id); if (!it) return; const trip = nextShopDay(today()); if (it.skip === trip) delete it.skip; else it.skip = trip; ui.form = null; save(); },
+    goCrave() { tab = "tasks"; uiPrefs.tv = "crave"; saveUiPrefs(); ui.cw = sumWeek(today()); window.scrollTo(0, 0); },
+    craveWeek(id) { ui.cw = id; },
+    craveGot(id, el) { const c = S.cravings?.list.find(x => x.id === id); if (!c) return; const was = c.got; c.got = el.dataset.v; save(); toast(c.got === "skip" ? `Let go of ${esc(c.name)}. Nice. 💪` : `Had ${esc(c.name)}. Enjoy it! 😋`, () => { if (was) c.got = was; else delete c.got; save(); }); },
+    craveAgain(id) { const o = S.cravings?.list.find(x => x.id === id); if (!o) return; const c = logCrave(o.name, { cat: o.cat }); toast(`Logged ${esc(c.name)}`, () => { S.cravings.list = S.cravings.list.filter(x => x !== c); save(); }); },
+    craveDel(id) { const L = S.cravings?.list || [], i = L.findIndex(x => x.id === id); if (i < 0) return; const [c] = L.splice(i, 1); ui.form = null; save(); toast(`Deleted ${esc(c.name)}`, () => { S.cravings.list.splice(i, 0, c); save(); }); },
+    craveShop(id) { const c = S.cravings?.list.find(x => x.id === id); if (!c) return; const sh = shop(); let it = sh.items.find(i => i.name.toLowerCase() === c.name.toLowerCase()); if (!it) { it = { id: uid(), name: c.name, cat: c.cat === "drink" ? "drinks" : "snacks", note: "From your cravings" }; sh.items.push(it); } it.want = (it.want || 0) + 1; save(); toast(`${esc(c.name)} is on Saturday's list 🛒`); },
+    cravePlan(id) { const c = S.cravings?.list.find(x => x.id === id); if (!c) return; const sat = nextShopDay(today()); S.tasks.push({ id: uid(), title: `Have ${c.name}`, due: sat, priority: 3, goalId: null, amount: 0, done: false }); save(); toast(`Planned: ${esc(c.name)} on ${wdName(sat)} 📅`); },
     toggleShopRest() { ui.shopRest = !ui.shopRest; },
     toggleAllTrips() { ui.allTrips = !ui.allTrips; },
     pickIn(v, el) {
@@ -2167,6 +2301,25 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       const when = !x.due ? "with no date" : x.due === today() ? "for today" : x.due === addDays(today(), 1) ? "for tomorrow" : "for " + fmtDay(x.due);
       toast(`Added ${when} ✨`, () => { S.tasks = S.tasks.filter(y => y.id !== x.id); save(); });
       if (!fromSheet) document.getElementById("qa")?.focus();
+      return;
+    }
+    if (kind === "cravequick") {
+      const raw = String(fd.get("q") || "").trim(); if (!raw) return;
+      const c = logCrave(raw); render();
+      toast(`Logged ${esc(c.name)} ${CRAVE_CATS[c.cat][0]}`, () => { S.cravings.list = S.cravings.list.filter(x => x !== c); save(); });
+      return;
+    }
+    if (kind === "crave") {
+      const name = String(fd.get("name") || "").trim().slice(0, 80); if (!name) return;
+      const id = f.dataset.id, old = id && S.cravings?.list.find(c => c.id === id);
+      const c = old || { id: uid(), day: today(), at: nowAt() };
+      c.name = name; c.cat = CRAVE_CATS[fd.get("cat")] ? String(fd.get("cat")) : guessCrave(name);
+      c.level = [1, 2, 3].includes(Number(fd.get("level"))) ? Number(fd.get("level")) : 2;
+      if (fd.get("wk") === "1") c.wk = true; else delete c.wk;
+      const g = String(fd.get("got") || ""); if (g === "had" || g === "skip") c.got = g; else delete c.got;
+      const note = String(fd.get("note") || "").trim().slice(0, 140); if (note) c.note = note; else delete c.note;
+      if (!old) cr().list.push(c);
+      S.started = true; ui.form = null; ui.draft = null; save(); render();
       return;
     }
     if (kind === "shopquick") {
