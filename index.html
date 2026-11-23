@@ -365,7 +365,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   // ---------- State ----------
-  const VERSION = "v1.11.0-web";
+  const VERSION = "v1.11.2-web";
   const ISSUES = "https://github.com/belipede/ascend-web/issues";
   const EMPTY = () => ({ v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], opens: {}, trialStart: null, savedAt: 0 });
   let FB = { col: null, list: [], open: false, kind: "bug", text: "", sent: "", err: "" };
@@ -411,6 +411,34 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
   }
   const shopCount = d => d && d.shop ? d.shop.items.length + d.shop.trips.length : 0;
 
+  // Craving log (optional, from v1.11.2). Same rules as shopping: cleaned in place, newer fields kept,
+  // a bad entry is dropped and never a reason to reject the whole file.
+  const CRAVE_CAT_KEYS = ["sweet", "savoury", "drink", "meal", "other"];
+  function cleanCravings(cv) {
+    if (!cv || typeof cv !== "object" || Array.isArray(cv)) return null;
+    const isDay = v => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+    const seen = new Set();
+    cv.list = (Array.isArray(cv.list) ? cv.list : []).filter(c => c && typeof c === "object" && !Array.isArray(c) && typeof c.name === "string" && c.name.trim() && isDay(c.day));
+    for (const [n, c] of cv.list.entries()) {
+      c.name = c.name.trim().slice(0, 80);
+      let id = typeof c.id === "string" && c.id ? c.id.slice(0, 40) : "c" + (n + 1);
+      while (seen.has(id)) id += "x";
+      seen.add(id); c.id = id;
+      if (!CRAVE_CAT_KEYS.includes(c.cat)) c.cat = "other";
+      if (!(typeof c.at === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(c.at))) c.at = "12:00";
+      if (![1, 2, 3].includes(c.level)) delete c.level;
+      if (!["had", "skip"].includes(c.got)) delete c.got;
+      if (typeof c.wk !== "boolean") delete c.wk;
+      if (!(typeof c.note === "string" && c.note.length <= 140)) delete c.note;
+    }
+    return cv;
+  }
+  const craveCount = d => d && d.cravings ? d.cravings.list.length : 0;
+  // Sections beyond goals, habits and tasks that still count as "there is data here".
+  const extraCount = d => shopCount(d) + craveCount(d);
+  // Top-level sections this version knows. Anything else (from a newer version) is kept as it is.
+  const KNOWN_KEYS = new Set(["v", "goals", "habits", "tasks", "logs", "entries", "started", "opens", "trialStart", "savedAt", "shop", "cravings"]);
+
   function validate(o) {
     if (!o || typeof o !== "object") throw new Error("That isn't an Ascend export.");
     for (const f of ["goals", "habits", "tasks", "entries"]) if (!Array.isArray(o[f])) throw new Error(`Missing the "${f}" list.`);
@@ -431,7 +459,8 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
     }
     for (const t of o.tasks) if (!t.id || !t.title) throw new Error("A task is missing its id or title.");
     for (const [hid, days] of Object.entries(o.logs)) for (const [k, v] of Object.entries(days)) if (!keyOk(k) || !["done", "rest"].includes(v)) throw new Error(`Bad log entry for ${hid} on ${k}.`);
-    return { v: 1, goals: o.goals, habits: o.habits, tasks: o.tasks, logs: o.logs, entries: o.entries, started: !!o.started, opens: (o.opens && typeof o.opens === "object") ? o.opens : {}, trialStart: o.trialStart || null, savedAt: Number(o.savedAt) || 0, ...(cleanShop(o.shop) ? { shop: o.shop } : {}) };
+    return { v: 1, goals: o.goals, habits: o.habits, tasks: o.tasks, logs: o.logs, entries: o.entries, started: !!o.started, opens: (o.opens && typeof o.opens === "object") ? o.opens : {}, trialStart: o.trialStart || null, savedAt: Number(o.savedAt) || 0, ...(cleanShop(o.shop) ? { shop: o.shop } : {}), ...(cleanCravings(o.cravings) ? { cravings: o.cravings } : {}),
+      ...Object.fromEntries(Object.entries(o).filter(([k]) => !KNOWN_KEYS.has(k))) };
   }
 
   // ---------- Storage: account db when available, this-device cache always ----------
@@ -473,8 +502,8 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
   // download (the last 5). Each is its own localStorage key, separate from your data, and never synced or exported.
   const BAK = "ascend-bak:";
   const KEEP_DAILY = 7, KEEP_SAFETY = 5;
-  const countsOf = d => `${d.goals.length} goal${d.goals.length === 1 ? "" : "s"}, ${d.habits.length} habit${d.habits.length === 1 ? "" : "s"}, ${d.tasks.length} task${d.tasks.length === 1 ? "" : "s"}${d.shop?.items.length ? `, ${d.shop.items.length} shopping item${d.shop.items.length === 1 ? "" : "s"}` : ""}`;
-  const hasContent = d => !!(d && (d.goals.length || d.habits.length || d.tasks.length || shopCount(d)));
+  const countsOf = d => `${d.goals.length} goal${d.goals.length === 1 ? "" : "s"}, ${d.habits.length} habit${d.habits.length === 1 ? "" : "s"}, ${d.tasks.length} task${d.tasks.length === 1 ? "" : "s"}${d.shop?.items.length ? `, ${d.shop.items.length} shopping item${d.shop.items.length === 1 ? "" : "s"}` : ""}${craveCount(d) ? `, ${craveCount(d)} craving${craveCount(d) === 1 ? "" : "s"}` : ""}`;
+  const hasContent = d => !!(d && (d.goals.length || d.habits.length || d.tasks.length || extraCount(d)));
   function listBackups() {
     const out = [];
     try {
@@ -580,7 +609,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       setSync("Saved on this device");
     }
   }
-  const hasData = () => S && (S.goals.length || S.habits.length || S.tasks.length || shopCount(S));
+  const hasData = () => S && (S.goals.length || S.habits.length || S.tasks.length || extraCount(S));
 
   // ---------- Sync to a private GitHub repo (optional) ----------
   // Off until a repo and token are entered in More. The settings have their own key and never go into an export.
@@ -635,7 +664,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       } else if (remote && hasContent(remote) && !hasData() && !gh.emptyOk) {
         // This phone is empty but GitHub has data: most likely the phone lost its data, not that you deleted
         // everything. Never upload an empty copy over it; ask instead (More shows "Use GitHub's copy").
-        if (cfg === gh) { gh.err = ""; gh.emptyRemote = { goals: remote.goals.length, habits: remote.habits.length, tasks: remote.tasks.length, shop: shopCount(remote), at: remote.savedAt }; ghStore(); }
+        if (cfg === gh) { gh.err = ""; gh.emptyRemote = { goals: remote.goals.length, habits: remote.habits.length, tasks: remote.tasks.length, shop: extraCount(remote), at: remote.savedAt }; ghStore(); }
         return;
       } else if (remote ? S.savedAt > remote.savedAt : (hasData() || S.started)) {
         const sent = JSON.stringify(S, null, 1), at = S.savedAt;
@@ -1475,7 +1504,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       <p class="hint" style="color:var(--ink)">Syncing to <b>${esc(gh.repo)}</b>. Last synced: <b>${esc(when)}</b>.</p>
       ${navigator.onLine === false ? `<p class="hint">You're offline. Changes are saved on this phone and upload when you're back online.</p>` : ""}
       ${err ? `<p class="err">${esc(err)}</p>` : ""}
-      ${gh.emptyRemote ? `<p class="err">This phone has no goals, habits or tasks, but GitHub has ${gh.emptyRemote.goals} goals, ${gh.emptyRemote.habits} habits${gh.emptyRemote.shop ? `, ${gh.emptyRemote.tasks} tasks and ${gh.emptyRemote.shop} shopping entries` : ` and ${gh.emptyRemote.tasks} tasks`}. To keep that safe, Ascend didn't upload this phone's empty copy.</p>
+      ${gh.emptyRemote ? `<p class="err">This phone has no goals, habits or tasks, but GitHub has ${gh.emptyRemote.goals} goals, ${gh.emptyRemote.habits} habits${gh.emptyRemote.shop ? `, ${gh.emptyRemote.tasks} tasks and ${gh.emptyRemote.shop} shopping and craving entries` : ` and ${gh.emptyRemote.tasks} tasks`}. To keep that safe, Ascend didn't upload this phone's empty copy.</p>
         <div class="btns"><button type="button" class="btn" data-act="ghPull">Use GitHub's copy</button><button type="button" class="btn ghost" data-act="ghPushEmpty">Replace GitHub with this empty copy</button></div>` : ""}
       <div class="btns"><button type="button" class="btn ghost" data-act="ghNow">Sync now</button><button type="button" class="btn ghost" data-act="ghOff">Turn off sync</button></div>
       ${bak ? `<p class="hint">If a sync download replaced something you wanted, you can put back this phone's copy from just before the last download.</p><div class="btns"><button type="button" class="btn ghost" data-act="ghUndo">Put back this phone's copy</button></div>` : ""}</div>`;
