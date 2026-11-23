@@ -31,6 +31,8 @@ jobs:
         run: node tests/polish.js
       - name: Shopping data safety
         run: node tests/shop-data.js
+      - name: Craving data safety
+        run: node tests/crave-data.js
       - name: Shopping list
         run: node tests/shopping.js
       - name: Shopping list and stock links

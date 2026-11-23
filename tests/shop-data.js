@@ -112,7 +112,7 @@ async function phone(b, data, gh) {
     const { ctx, p } = await phone(b, { v: 1, goals: [], habits: [], tasks: [], logs: {}, entries: [], started: true, savedAt: Date.now() }, true);
     ok(GH.puts === 0 && JSON.parse(GH.file).shop.items.length === 3, 'empty phone did not upload over GitHub\'s shopping data');
     await tab(p, 'more');
-    ok(/shopping entries/.test(await p.innerText('#view')), 'More explains GitHub has shopping data');
+    ok(/shopping and craving entries/.test(await p.innerText('#view')), 'More explains GitHub has shopping data');
     errs.push(...p.errs); await ctx.close();
   }
   // 7. Sync upload carries the shopping data.
