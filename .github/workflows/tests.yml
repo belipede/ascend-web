@@ -35,6 +35,8 @@ jobs:
         run: node tests/crave-data.js
       - name: Shopping list
         run: node tests/shopping.js
+      - name: Shopping list and stock links
+        run: node tests/shop-links.js
       - name: Task pickers, goal steps, Goals tab
         run: node tests/goals-tasks.js "$RUNNER_TEMP/old.html"
       - name: Version was bumped (needed for phones to pick up the update)

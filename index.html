@@ -201,6 +201,7 @@ button.rowmain { flex: 1; min-width: 0; font: inherit; color: inherit; text-alig
 .catrow { display: grid; grid-template-columns: 26px 1fr auto; gap: 4px 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
 .catrow:first-child { border-top: 0; } .catrow .bar { grid-column: 2 / 4; height: 6px; } .catrow b { font-variant-numeric: tabular-nums; }
 .step2 { display: flex; align-items: center; gap: 4px; flex: none; } .step2 button { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font: inherit; font-size: 20px; color: var(--accent); cursor: pointer; }
+.tripln { flex-wrap: wrap; row-gap: 8px; } .tripln .main { flex: 1 1 100%; } .tripin { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding-right: 14px; }
 .step2 input { width: 58px; text-align: center; font-weight: 700; padding: 6px 4px; min-height: 40px; }
 .pricein { width: 92px; flex: none; text-align: right; min-height: 40px; padding: 6px 8px; }
 .peek { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 8px 10px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); font-size: 14px; }
@@ -393,14 +394,14 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       if (!SHOP_CAT_KEYS.includes(i.cat)) i.cat = "other";
       fix(i, "price", numIn(0, 1e7)); fix(i, "rate", numIn(0, 1000)); fix(i, "keeps", numIn(1, 3650)); fix(i, "stock", numIn(0, 1e5));
       fix(i, "want", numIn(0, 1e4)); fix(i, "stockOn", isDay); fix(i, "boughtOn", isDay); fix(i, "skip", isDay);
-      fix(i, "staple", bool); fix(i, "low", bool); fix(i, "unit", txt(30)); fix(i, "note", txt(140));
+      fix(i, "staple", bool); fix(i, "low", bool); fix(i, "noTrack", bool); fix(i, "unit", txt(30)); fix(i, "note", txt(140));
     }
     sh.trips = (Array.isArray(sh.trips) ? sh.trips : []).filter(t => t && typeof t === "object" && isDay(t.day) && Array.isArray(t.lines));
     for (const [n, t] of sh.trips.entries()) {
       if (typeof t.id !== "string" || !t.id) t.id = "trip" + (n + 1);
       fix(t, "where", txt(60));
       t.lines = t.lines.filter(l => l && typeof l === "object" && typeof l.name === "string" && numIn(-1e7, 1e7)(l.cents));
-      for (const l of t.lines) { if (!SHOP_CAT_KEYS.includes(l.cat)) l.cat = "other"; fix(l, "qty", numIn(0, 1e4)); fix(l, "itemId", txt(40)); }
+      for (const l of t.lines) { if (!SHOP_CAT_KEYS.includes(l.cat)) l.cat = "other"; fix(l, "qty", numIn(0, 1e4)); fix(l, "added", numIn(0, 1e4)); fix(l, "itemId", txt(40)); }
     }
     if (!sh.cart || typeof sh.cart !== "object" || Array.isArray(sh.cart)) sh.cart = {};
     for (const k of Object.keys(sh.cart)) if (!seen.has(k)) delete sh.cart[k];
@@ -1605,7 +1606,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       const [em, name] = SHOP_CATS[ck];
       h += `<h2 class="ghead"><span class="em">${em}</span>${name}</h2><div class="list">${grp.map(l => shopRow(l, cart)).join("")}</div>`;
     }
-    h += `<form class="shopadd" data-form="shopquick"><label for="sq" style="flex:1"><span class="sr" hidden>Add a shopping item</span><input id="sq" name="q" placeholder="Add: toothpaste $4.50 x2" maxlength="100" autocomplete="off" enterkeyhint="done"></label><button class="btn" type="submit">Add</button></form>`;
+    h += `<form class="shopadd" data-form="shopquick"><label for="sq" style="flex:1"><span class="sr" hidden>Add a shopping item</span><input id="sq" name="q" placeholder="${Object.keys(cart).length ? "Grabbed something else?" : "Add: toothpaste $4.50 x2"}" maxlength="100" autocomplete="off" enterkeyhint="done"></label><button class="btn" type="submit">Add</button></form>`;
     if (L.some(l => l.auto)) h += `<p class="hint" style="margin-top:8px">Suggested items come from your stock and how fast you use things. Tap one to change the amount or skip it this week.</p>`;
     const n = L.filter(l => cart[l.it.id]);
     if (n.length) h += `<div class="cartbar"><div class="in"><span>In cart: ${n.length} of ${L.length}<br><b>${money(n.reduce((a, l) => a + lineCents(l), 0))}</b></span><button type="button" class="btn" data-act="openForm" data-form="trip">Finish shop</button></div></div>`;
@@ -1616,6 +1617,8 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
     const fresh = its.filter(isTracked).map(it => ({ it, p: stockPlan(it, t) })).sort((a, b) => a.p.runOut < b.p.runOut ? -1 : a.p.runOut > b.p.runOut ? 1 : 0);
     const cup = its.filter(i => !isTracked(i) && i.staple), rest = its.filter(i => !isTracked(i) && !i.staple);
     let h = `<p class="hint" style="margin-top:12px">Ascend estimates what's left from how fast you use each thing. Count now and then and it learns your real pace.</p>`;
+    const th = trackHint();
+    if (th) h += `<div class="peek" style="margin-top:12px"><span class="em" aria-hidden="true">💡</span><span><b>You buy ${esc(th.it.name)} often</b> (${th.n} shops in ${th.weeks} weeks, about ${qtyTxt(th.rate)} a week). Track it and Ascend will put it on the list before you run out.<span class="btns" style="margin-top:8px"><button type="button" class="mini" data-act="shopTrack" data-id="${th.it.id}" data-v="${th.rate}">Track it</button><button type="button" class="mini muted" data-act="shopNoTrack" data-id="${th.it.id}">No thanks</button></span></span></div>`;
     h += `<h2 class="ghead">Fresh and tracked<span class="cnt">${fresh.length}</span></h2>`;
     h += fresh.length ? `<div class="list">${fresh.map(({ it, p }) => {
       const daysLeft = p.perDay ? Math.floor(p.now / p.perDay + 1e-9) : 0, lo = p.runOut <= p.trip;
@@ -1623,7 +1626,7 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       return `<div class="row slim" style="padding-left:14px"><button type="button" class="rowmain" data-act="openForm" data-form="item:${it.id}"><span class="main"><span class="title" style="display:block">${esc(it.name)}</span>
         <span class="sub"><span>${p.now < 0.25 ? "None left" : `About ${qtyTxt(p.now)} left · ${daysLeft} day${daysLeft === 1 ? "" : "s"}`}</span>${off ? `<span class="tip">${p.useBy <= t ? "use today" : `use by ${wdName(p.useBy)}`}</span>` : ""}</span>
         <span class="days" style="display:block"><span class="bar ${lo ? "lo" : ""}" style="display:block"><i style="width:${Math.min(100, daysLeft / 7 * 100)}%"></i></span></span></span>
-        <span class="stat ${p.buy ? "warn" : ""}">${it.want > 0 ? `On list ×${qtyTxt(it.want)}` : it.skip === p.trip ? "Skipped" : p.buy ? `Buy ${qtyTxt(p.buy)}` : "Enough"}</span></button></div>`;
+        <span class="stat ${p.buy ? "warn" : ""}">${it.want > 0 ? `On list ×${qtyTxt(it.want)}` : it.skip === p.trip ? "Skipped" : p.buy ? `Buy ${qtyTxt(p.buy)}` : "Enough"}</span></button>${p.now >= 0.25 ? `<button type="button" class="mini muted" data-act="shopOut" data-id="${it.id}" aria-label="${esc(it.name)} ran out">Ran out</button>` : ""}</div>`;
     }).join("")}</div>` : `<div class="list"><div class="empty">Nothing tracked yet. Add fresh food you buy every week, like milk, bread or fruit.</div></div>`;
     h += `<div class="btns add">${fresh.length ? `<button type="button" class="btn" data-act="openForm" data-form="count">Count what's left</button>` : ""}<button type="button" class="btn ${fresh.length ? "ghost" : ""}" data-act="openForm" data-form="item" data-kind="track">New item</button></div>`;
     if (cup.length) {
@@ -1703,8 +1706,9 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
     const tot = L.reduce((a, l) => a + lineCents(l), 0);
     return `<h2>Finish shop</h2><form data-form="trip"><p class="hint">${fmtDay(t)}. Check the prices against your receipt; Ascend remembers them for next time.</p>
       <label for="tr-w" style="margin-top:10px">Where (optional)<input id="tr-w" name="where" maxlength="60" value="${esc(S.shop?.lastWhere || "")}" autocomplete="off"></label>
-      <div class="list" style="margin-top:10px">${L.map(l => `<div class="row slim" style="padding-left:14px"><div class="main"><div class="title">${esc(l.it.name)}</div><div class="sub"><span>×${qtyTxt(l.qty)}${l.qty !== 1 && l.it.price ? ` · ${money(l.it.price)} each` : ""}</span></div></div><input class="pricein" name="c-${l.it.id}" inputmode="decimal" placeholder="0.00" value="${l.it.price ? (lineCents(l) / 100).toFixed(2) : ""}" aria-label="${esc(l.it.name)} total price"></div>`).join("")}</div>
-      <p class="hint" style="margin-top:10px">Estimated total ${money(tot)}. Saving adds what you paid to this week and ${monthName(t)}, adds what you bought to your stock, and leaves anything you didn't tick on the list.</p>
+      <div class="list" style="margin-top:10px">${L.map(l => { const c = l.it.price ? (lineCents(l) / 100).toFixed(2) : ""; return `<div class="row slim tripln" style="padding-left:14px"><div class="main"><div class="title">${esc(l.it.name)}</div><div class="sub"><span>${l.it.price ? `${money(l.it.price)} each` : "How many, and what you paid"}${isTracked(l.it) ? " · adds to stock" : ""}</span></div></div>
+        <div class="tripin"><div class="step2"><button type="button" data-act="cntStep" data-id="-1" aria-label="Fewer ${esc(l.it.name)}">−</button><input name="q-${l.it.id}" inputmode="decimal" value="${half(l.qty)}" aria-label="How many ${esc(l.it.name)} you bought"><button type="button" data-act="cntStep" data-id="1" aria-label="More ${esc(l.it.name)}">+</button></div><input class="pricein" name="c-${l.it.id}" inputmode="decimal" placeholder="0.00" value="${c}" data-was="${c}" aria-label="${esc(l.it.name)} total price"></div></div>`; }).join("")}</div>
+      <p class="hint" style="margin-top:10px">Estimated total ${money(tot)}. Change the number if you bought more or fewer; the price follows unless you've typed your own. Saving adds what you paid to this week and ${monthName(t)}, adds what you bought to your stock, and leaves anything you didn't tick on the list.</p>
       <div class="btns" style="margin-top:12px"><button class="btn" type="submit">Save shop</button><button class="btn ghost" type="button" data-act="closeForm">Keep shopping</button></div></form>`;
   }
   // Quick add: "toothpaste $4.50 x2". An item with the same name is put back on the list instead of duplicated.
@@ -1714,40 +1718,86 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
     name = name.replace(/(?:^|\s)(?:x\s?(\d+(?:\.5)?)|(\d+(?:\.5)?)\s?x)(?=\s|$)/i, (_, a, b) => { qty = Number(a || b) || 1; return " "; });
     name = name.replace(/\s+/g, " ").trim().slice(0, 80); if (!name) return null;
     const sh = shop(), same = sh.items.find(i => i.name.toLowerCase() === name.toLowerCase());
-    if (same) { same.want = (same.want || 0) + qty; if (price != null) same.price = price; return { it: same, made: false }; }
+    // Mid-shop (something already ticked), a new line goes straight into the cart.
+    const shopping = Object.keys(sh.cart || {}).length > 0, tick = it => { if (shopping) (sh.cart ||= {})[it.id] = true; };
+    if (same) {
+      // Already suggested: keep the larger amount instead of replacing the suggestion with 1.
+      const sug = !(same.want > 0) ? (shopList().find(l => l.it.id === same.id)?.qty || 0) : 0;
+      same.want = same.want > 0 ? same.want + qty : Math.max(sug, qty);
+      if (price != null) same.price = price; tick(same); return { it: same, made: false, inCart: shopping };
+    }
     const it = { id: uid(), name, cat: guessCat(name), want: qty, ...(price != null ? { price } : {}) };
-    sh.items.push(it); return { it, made: true };
+    sh.items.push(it); tick(it); return { it, made: true, inCart: shopping };
   }
   function saveTrip(fd) {
     const t = today(), sh = shop(), cart = sh.cart || {}, L = shopList(t).filter(l => cart[l.it.id]);
     if (!L.length) return null;
     const before = JSON.stringify(sh), where = String(fd.get("where") || "").trim().slice(0, 60);
-    const lines = L.map(l => { const c = toCents(fd.get("c-" + l.it.id)); return { itemId: l.it.id, name: l.it.name, cat: l.it.cat, qty: l.qty, cents: c ?? lineCents(l) }; });
+    const all = L.map(l => {
+      const q = Number(fd.get("q-" + l.it.id)), qty = Number.isFinite(q) && q >= 0 && String(fd.get("q-" + l.it.id) ?? "").trim() !== "" ? Math.min(1e4, half(q)) : l.qty;
+      // A price left as Ascend filled it in follows the quantity; a typed price is kept.
+      const raw = fd.get("c-" + l.it.id), typed = raw != null && String(raw) !== String(document.querySelector(`[name="c-${l.it.id}"]`)?.dataset.was ?? "");
+      const c = typed ? toCents(raw) : null;
+      return { itemId: l.it.id, name: l.it.name, cat: l.it.cat, qty, cents: c ?? Math.round(qty * (l.it.price || 0)) };
+    });
+    // Set to 0 at the till: not bought, so it comes out of the cart but stays on the list.
+    for (const l of all) if (!(l.qty > 0 || l.cents > 0)) delete cart[l.itemId];
+    const lines = all.filter(l => l.qty > 0 || l.cents > 0);
+    if (!lines.length) return { before, total: 0, none: true };
     sh.trips.push({ id: uid(), day: t, ...(where ? { where } : {}), lines });
     if (where) sh.lastWhere = where;
     for (const ln of lines) {
       const it = shopItem(ln.itemId); if (!it) continue;
       if (ln.cents > 0 && ln.qty > 0) it.price = Math.round(ln.cents / ln.qty);
-      if (isTracked(it)) { const p = stockPlan(it, t); it.stock = half(p.now) + ln.qty; it.stockOn = t; it.boughtOn = t; }
+      // added: how much this shop put into stock, so deleting the shop can take it back out.
+      if (isTracked(it) && ln.qty > 0) { const p = stockPlan(it, t); it.stock = half(p.now) + ln.qty; it.stockOn = t; it.boughtOn = t; ln.added = ln.qty; }
       delete it.want; delete it.skip; delete it.low;
       delete cart[it.id];
     }
     return { before, total: lines.reduce((a, l) => a + l.cents, 0) };
   }
+  // At the till, a price Ascend filled in follows the quantity until you type your own.
+  function tripQty(inp) {
+    const m = /^q-(.+)$/.exec(inp?.name || ""); if (!m) return;
+    const it = shopItem(m[1]), c = inp.form?.querySelector(`[name="c-${CSS.escape(m[1])}"]`);
+    if (!it || !it.price || !c || c.value !== c.dataset.was) return;
+    const q = Number(inp.value); if (!Number.isFinite(q) || q < 0) return;
+    c.value = c.dataset.was = (Math.round(half(q) * it.price) / 100).toFixed(2);
+  }
+  document.addEventListener("input", e => tripQty(e.target));
   // A count resets the stock and nudges the weekly rate halfway toward what the count shows.
   function saveCount(fd) {
     const t = today(); let n = 0;
     for (const it of (S.shop?.items || []).filter(isTracked)) {
       const v = Number(fd.get("n-" + it.id)); if (!Number.isFinite(v) || v < 0) continue;
       const was = half(stockPlan(it, t).now); if (Math.abs(v - was) < 0.01) continue;   // left as Ascend guessed
-      const days = it.stockOn ? daysBetween(it.stockOn, t) : 0;
-      if (days >= 3) {
-        const seen = Math.max(0, (Number(it.stock) || 0) - v) / days * 7;
-        it.rate = Math.max(0.25, Math.round(((Number(it.rate) || 0) + seen) / 2 * 4) / 4);
-      }
-      it.stock = v; it.stockOn = t; n++;
+      setStock(it, v, t); n++;
     }
     return n;
+  }
+  function setStock(it, v, t) {
+    const days = it.stockOn ? daysBetween(it.stockOn, t) : 0;
+    if (days >= 3) {
+      const seen = Math.max(0, (Number(it.stock) || 0) - v) / days * 7;
+      it.rate = Math.max(0.25, Math.round(((Number(it.rate) || 0) + seen) / 2 * 4) / 4);
+    }
+    it.stock = v; it.stockOn = t;
+  }
+  // Items you keep buying "just this once": 3+ shops on different days, over 2+ weeks.
+  function trackHint() {
+    if (!S.shop) return null;
+    const t = today();
+    for (const it of S.shop.items) {
+      if (isTracked(it) || it.staple || it.noTrack) continue;
+      const days = [...new Set(S.shop.trips.filter(tr => tr.day <= t && tr.lines.some(l => l.itemId === it.id && l.qty > 0)).map(tr => tr.day))].sort();
+      if (days.length < 3) continue;
+      const last = days[days.length - 1], span = daysBetween(days[0], last); if (span < 14) continue;
+      // What was bought before the last shop lasted from the first shop to the last one.
+      const qty = S.shop.trips.filter(tr => tr.day >= days[0] && tr.day < last).reduce((a, tr) => a + tr.lines.filter(l => l.itemId === it.id).reduce((b, l) => b + (Number(l.qty) || 0), 0), 0);
+      const rate = Math.max(0.25, Math.round(qty / span * 7 * 2) / 2);
+      return { it, n: days.length, weeks: Math.max(2, Math.round(daysBetween(days[0], t) / 7)), rate };
+    }
+    return null;
   }
 
   function render() {
@@ -1847,6 +1897,18 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
     goShop() { tab = "tasks"; uiPrefs.tv = "shop"; saveUiPrefs(); ui.shopView = "list"; window.scrollTo(0, 0); },
     shopTick(id) { const c = (shop().cart ||= {}); if (c[id]) delete c[id]; else c[id] = true; save(); },
     shopLow(id, el) { const it = shopItem(id); if (!it) return; if (el.dataset.v === "1") it.low = true; else delete it.low; save(); },
+    shopOut(id) {
+      const it = shopItem(id); if (!it || !isTracked(it)) return; const before = JSON.stringify(it);
+      setStock(it, 0, today()); save();
+      const p = stockPlan(it, today()), on = it.want > 0 || (p.buy > 0 && it.skip !== p.trip);
+      toast(`${esc(it.name)}: none left${on ? `. On the list for ${wdName(p.trip)}` : ""}`, () => { Object.assign(it, JSON.parse(before)); for (const k of Object.keys(it)) if (!(k in JSON.parse(before))) delete it[k]; save(); });
+    },
+    shopTrack(id, el) {
+      const it = shopItem(id); if (!it) return;
+      it.rate = Number(el.dataset.v) || 1; it.stock = 0; it.stockOn = today(); delete it.staple; delete it.low;
+      save(); ui.form = "item:" + id;
+    },
+    shopNoTrack(id) { const it = shopItem(id); if (!it) return; it.noTrack = true; save(); },
     shopAgain(id) { const it = shopItem(id); if (!it) return; it.want = 1; save(); toast(`${esc(it.name)} is on the list`); },
     shopSkip(id) { const it = shopItem(id); if (!it) return; const trip = nextShopDay(today()); if (it.skip === trip) delete it.skip; else it.skip = trip; ui.form = null; save(); },
     toggleShopRest() { ui.shopRest = !ui.shopRest; },
@@ -1857,9 +1919,16 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       if (el.dataset.name === "kind") f.querySelector(".trackf").hidden = v !== "track";
       return Promise.resolve();
     },
-    cntStep(d, el) { const inp = el.parentElement.querySelector("input"); inp.value = String(Math.max(0, half((Number(inp.value) || 0) + Number(d)))); return Promise.resolve(); },
+    cntStep(d, el) { const inp = el.parentElement.querySelector("input"); inp.value = String(Math.max(0, half((Number(inp.value) || 0) + Number(d)))); tripQty(inp); return Promise.resolve(); },
     askDelItem(id) { const it = shopItem(id); if (!it) return; ui.form = null; ui.confirm = { text: `Delete ${it.name}? Past shops that included it stay in your spending.`, yes: "Delete item", run: () => { S.shop.items = S.shop.items.filter(i => i.id !== id); delete S.shop.cart[id]; save(); } }; },
-    askDelTrip(id) { const tr = S.shop?.trips.find(x => x.id === id); if (!tr) return; ui.confirm = { text: `Delete the shop on ${fmtDay(tr.day)} (${money(tripTotal(tr))}) from your spending? Your stock isn't changed.`, yes: "Delete shop", run: () => { S.shop.trips = S.shop.trips.filter(x => x.id !== id); save(); } }; },
+    askDelTrip(id) {
+      const tr = S.shop?.trips.find(x => x.id === id); if (!tr) return;
+      // Stock this shop added comes back out, unless you've counted or edited that item since.
+      const back = tr.lines.filter(l => l.added > 0).map(l => ({ l, it: shopItem(l.itemId) })).filter(x => x.it && isTracked(x.it) && x.it.stockOn === tr.day);
+      ui.confirm = { text: `Delete the shop on ${fmtDay(tr.day)} (${money(tripTotal(tr))}) from your spending? ${back.length ? `What it added to your stock (${back.map(x => x.it.name).join(", ")}) is taken back out too.` : "Your stock isn't changed."}`, yes: "Delete shop", run: () => {
+        for (const { l, it } of back) { it.stock = Math.max(0, half(stockPlan(it, today()).now) - l.added); it.stockOn = today(); }
+        S.shop.trips = S.shop.trips.filter(x => x.id !== id); save(); } };
+    },
     template() { applyTemplate(); },
     blank() { S.started = true; save(); tab = "goals"; ui.form = "goal"; },
     toggleHabit(id, el) {
@@ -2104,12 +2173,13 @@ label.pill:focus-within { outline: 2px solid var(--accent); outline-offset: 2px;
       const raw = String(fd.get("q") || "").trim(); if (!raw) return;
       const r = shopQuick(raw); if (!r) return;
       S.started = true; save(); render();
-      toast(`Added ${esc(r.it.name)}${r.made ? ` to ${SHOP_CATS[r.it.cat][1]}` : ""}`, r.made ? () => { S.shop.items = S.shop.items.filter(i => i.id !== r.it.id); save(); } : null);
+      toast(`Added ${esc(r.it.name)}${r.inCart ? " to your cart" : r.made ? ` to ${SHOP_CATS[r.it.cat][1]}` : ""}`, r.made ? () => { S.shop.items = S.shop.items.filter(i => i.id !== r.it.id); delete S.shop.cart[r.it.id]; save(); } : null);
       document.getElementById("sq")?.focus();
       return;
     }
     if (kind === "trip") {
       const r = saveTrip(fd); ui.form = null; if (!r) { render(); return; }
+      if (r.none) { save(); render(); toast("Nothing bought, so nothing saved. Those items stay on the list."); return; }
       S.started = true; save(); render();
       toast(`Shop saved: ${money(r.total)}. Stock updated.`, () => { S.shop = JSON.parse(r.before); save(); });
       return;
